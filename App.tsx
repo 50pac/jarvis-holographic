@@ -82,12 +82,12 @@ const App: React.FC = () => {
                           ></div>
                       </div>
                       <div className="text-xs text-gray-500 h-20 overflow-hidden w-full text-center leading-tight">
-                          {bootStep >= 1 && <div>> 内存分配检查... 完成</div>}
-                          {bootStep >= 1 && <div>> GPU 委托... 已分配</div>}
-                          {bootStep >= 2 && <div>> 加载 MEDIA_PIPE.WASM...</div>}
-                          {bootStep >= 2 && <div>> 连接卫星信号...</div>}
-                          {bootStep >= 3 && <div>> 视网膜扫描... 已绕过</div>}
-                          {bootStep >= 3 && <div className="text-green-500">> 访问被允许</div>}
+                          {bootStep >= 1 && <div> 内存分配检查... 完成</div>}
+                          {bootStep >= 1 && <div> GPU 委托... 已分配</div>}
+                          {bootStep >= 2 && <div> 加载 MEDIA_PIPE.WASM...</div>}
+                          {bootStep >= 2 && <div> 连接卫星信号...</div>}
+                          {bootStep >= 3 && <div> 视网膜扫描... 已绕过</div>}
+                          {bootStep >= 3 && <div className="text-green-500"> 访问被允许</div>}
                       </div>
                   </div>
               )}
