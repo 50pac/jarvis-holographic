@@ -1,7 +1,8 @@
 {
   "name": "j.a.r.v.i.s.-holographic-interface",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
