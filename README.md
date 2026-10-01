@@ -65,7 +65,8 @@ npm start
 ├─ commands/                 命令解析器与 Vitest 单测
 │  ├─ commandParser.ts        唤醒词、定位与命令优先级
 │  └─ commandParser.test.ts   命令解析测试
-├─ hooks/                    启动、键盘输入、语音识别/会话和打字效果
+├─ armors/                   战甲注册表、循环/存储/主题/快捷键纯函数及测试
+├─ hooks/                    启动、键盘输入、语音识别/会话、换装状态和打字效果
 │  ├─ useVoiceCommands.ts     命令执行、会话状态与场景控制
 │  ├─ useSpeechRecognition.ts 浏览器语音识别生命周期
 │  └─ useCommandInput.ts      Enter/Esc 键盘命令框
@@ -74,7 +75,8 @@ npm start
 │  ├─ HolographicEarth.tsx    3D 地球与战术地形
 │  ├─ HUDOverlay.tsx          HUD 与 GEO_INTEL 情报面板
 │  ├─ AMapView.tsx            高德地图与手势平移/缩放
-│  └─ HolographicSuit.tsx     战甲 GLB 与交互特效
+│  ├─ HolographicSuit.tsx     战甲 GLB / 程序化机甲与交互特效
+│  └─ armor/                  ArmorPicker 战甲库面板、ProceduralMech 程序化机甲
 ├─ services/                 MediaPipe 资源/识别、LLM、物体/人脸检测和音效
 │  ├─ mediapipeAssets.ts      本地 WASM 和模型的路径
 │  └─ llmService.ts           同源 /api/llm 请求与错误提示
@@ -130,9 +132,40 @@ npm start
 | `eye` / `右眼` | 开启右眼标记 |
 | `zoom in` / `放大`；`zoom out` / `缩小` | 地图放大 / 缩小一级 |
 
-匹配优先级是 **关闭类 > `over` > 定位 > `show mark` > `stop` / `reset` / `land(ing)` / `fly` > 地图 > 扫描 > 右眼 > 缩放**。同一战甲动作组内按 `stop`、`reset`、`land(ing)`、`fly` 匹配；缩放同时出现时先匹配放大。
+匹配优先级是 **关闭类 > `over` > 定位 > `show mark` > 战甲切换（`next/previous armor`、`下一套`/`上一套`、具体战甲名） > 战甲库（`换装`/`armor`…，且句中没有 `stop`/`reset`/`land`/`fly`） > `stop` / `reset` / `land(ing)` / `fly` > 地图 > 扫描 > 右眼 > 缩放**。同一战甲动作组内按 `stop`、`reset`、`land(ing)`、`fly` 匹配；缩放同时出现时先匹配放大。
 
 唤醒词包括 `hello jarvis`、`hey jarvis`、`你好 jarvis`、`jarvis`；`isWakeWord` 用 `includes` 检查，因此包含 `jarvis` 的句子也可唤醒。唤醒会话为 **60 秒**，会话内非命令内容发送给 DeepSeek；`over` 可提前结束。语音识别的 `lang` 固定为 `en-US`，所以中文命令更适合键盘输入：按 **Enter** 打开命令框，再按 Enter 提交；按 **Esc** 关闭。
+
+## 战甲库
+
+按 `show mark` 显示战甲后，可在“战甲库”里一键换装。所有战甲定义集中在 `armors/armorRegistry.ts`，全部靠代码与现有 `ironman.glb` 实现，**没有新增任何模型/二进制资源，不依赖外部下载**。
+
+| id | 名称 | 实现方式 | 语音/文字关键词 |
+| --- | --- | --- | --- |
+| `mark-85` | Mark 85 / 马克85 | 原 `ironman.glb`，保持原样 | `mark 85`、`mark85`、`马克85` |
+| `mark-3` | Mark 3 红金经典 | 复用同一 glb，材质覆盖（红金 + 暖橙发光） | `mark 3`、`mark3`、`马克3`、`红金` |
+| `mark-42` | Mark 42 流线 | 复用同一 glb，材质覆盖（亮金红 + 冰蓝发光） | `mark 42`、`mark42`、`马克42`、`流线` |
+| `stealth` | 夜行者 Stealth（黑金） | 复用同一 glb，材质覆盖（近黑 + 暗金 + 琥珀发光） | `stealth`、`夜行者`、`黑金` |
+| `hulkbuster` | Hulkbuster 重型机甲 | `components/armor/ProceduralMech.tsx` 用基础几何体程序化生成 | `hulkbuster`、`反浩克`、`反浩克装甲`、`重型机甲` |
+| `atlas` | 原创机甲 Atlas | 同上，参数不同（修长、四推进器） | `atlas`、`阿特拉斯`、`原创机甲` |
+
+每套战甲带自己的 HUD 主题色（`theme`：主色 / 次色 / 发光色 / 扫描线色），切换时写入 CSS 变量 `--hud-primary`、`--hud-primary-rgb`、`--hud-secondary`、`--hud-glow`、`--hud-scanline`，HUD 主色与扫描线随之变化。当前战甲 id 存在 `localStorage`（键 `jarvis.armorId`），刷新后保持；`VITE_STATIC_DEMO=true` 的静态演示下同样可用。
+
+**命令**（文字命令框或语音，经 `commands/commandParser.ts` 解析）：
+
+| 命令 | 效果 |
+| --- | --- |
+| `换装`、`换甲`、`armor`、`suit up`、`战甲库` | 打开战甲库面板 |
+| `mark 85`、`mark 3`、`mark 42`、`stealth`、`hulkbuster`、`atlas` 或中文名 | 直接切换到该战甲 |
+| `next armor`、`下一套` / `previous armor`、`上一套` | 循环切换下一套 / 上一套 |
+
+注意 `mark` 的关系：`show mark`（显示战甲）和 `mark off` / `close mark`（隐藏战甲）优先级更高；单独的 `mark` 不会被当作战甲，`mark 3` 才是 Mark 3。
+
+**快捷键**：`A` 开关战甲库；面板打开时 `←` / `→` 切换，`Enter` 确认并关闭，`Esc` 关闭；也可直接点击卡片。命令输入框或其它输入框聚焦时快捷键不生效。
+
+**换装动效**：约 1.2 秒。程序化机甲为“零件飞入组装”；glb 战甲为主题色扫描环 + 粒子汇聚 + 展开。同时播放合成音效（参数取自战甲的 `sound`），J.A.R.V.I.S. 以字幕和 TTS 播报 “Armor switched to Mark 3”。
+
+**如何新增一套战甲**：往 `armors/armorRegistry.ts` 的 `builtIns` 数组里加一项 `ArmorDef`（`id`、`nameEn`/`nameZh`、`aliases`、`kind: 'glb' | 'procedural'`、`materialOverride` 或 `mech`、`theme`、`sound`、`description`、`stats`），别名在全部小写、去空白后不得与其它战甲的 id/名称/别名重复（`armors/armorRegistry.test.ts` 会检查）。运行时也可以调用 `registerArmor(def)` 追加条目（战甲库和语音命令会立即识别，为用户自带 glb 预留），`unregisterArmor(id)` 删除（内置六套不可删）。
 
 ## 配置说明
 

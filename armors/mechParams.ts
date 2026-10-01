@@ -3,6 +3,8 @@ export interface MechParams {
   size: number;
   bulk: number;
   headStyle: 'dome' | 'horned' | 'visor';
+  /** Optional silhouette profile; omitted for neutral custom mechs. */
+  frameStyle?: 'heavy' | 'aero';
   /** Shoulder shell size relative to the default of 1. */
   shoulderSize?: number;
   thrusterCount: number;

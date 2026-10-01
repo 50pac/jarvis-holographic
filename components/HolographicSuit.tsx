@@ -919,9 +919,14 @@ export default function HolographicSuit({ handTrackingRef, command, armorId, tra
         </group>
       )}
       {armor.kind === 'procedural' && armor.mech && (
-        <Suspense fallback={null}>
-          <ProceduralMech params={armor.mech} assemble={assemble} />
-        </Suspense>
+        <>
+          <hemisphereLight color="#e9faff" groundColor="#24343c" intensity={0.8} />
+          <directionalLight position={[1.5, 2, 4]} intensity={1.2} />
+          <directionalLight color={armor.theme.glow} position={[-3, 2, -2]} intensity={0.9} />
+          <Suspense fallback={null}>
+            <ProceduralMech params={armor.mech} assemble={assemble} />
+          </Suspense>
+        </>
       )}
       <mesh ref={scannerRef as any} visible={false} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.5, 0.72, 48]} />
