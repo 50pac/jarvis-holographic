@@ -80,7 +80,7 @@ describe('proxy and security configuration', () => {
 
   it('builds a compatible CSP with opt-in switches', () => {
     const csp = buildCsp({});
-    expect(csp).toContain("script-src 'self' 'wasm-unsafe-eval' https://webapi.amap.com");
+    expect(csp).toContain("script-src 'self' 'wasm-unsafe-eval' blob: https://webapi.amap.com");
     expect(csp).toContain("worker-src 'self' blob:");
     expect(csp).toContain("font-src 'self' data:");
     expect(csp).not.toContain("'unsafe-eval'");

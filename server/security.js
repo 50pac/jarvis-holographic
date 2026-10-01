@@ -64,7 +64,7 @@ export function createOriginGuard(allowedOrigin) {
 }
 
 export function buildCsp(env = process.env) {
-  const scripts = ["'self'", "'wasm-unsafe-eval'", 'https://webapi.amap.com'];
+  const scripts = ["'self'", "'wasm-unsafe-eval'", 'blob:', 'https://webapi.amap.com'];
   if (env.CSP_SCRIPT_UNSAFE_EVAL === '1') scripts.push("'unsafe-eval'");
   return [
     "default-src 'self'",

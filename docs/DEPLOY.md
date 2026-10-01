@@ -4,7 +4,18 @@
 
 摄像头与麦克风只能在 **HTTPS** 或 **localhost** 下使用；公网部署务必开 HTTPS。
 
-## 快速：Docker 构建与运行
+## 一条命令跑（本地 / 局域网）
+
+```bash
+npm ci && npm run build && npm start   # 之后只需 npm run build && npm start
+# 本机：http://localhost:8787；局域网：http://<本机IP>:8787（默认监听 0.0.0.0）
+```
+
+注意：局域网用 `http://<IP>` 访问时，浏览器不把它当安全上下文，**摄像头/麦克风会被禁用**；局域网内要用摄像头请走 HTTPS（见下方 Nginx 示例或自签证书反代），或只在本机用 `localhost`。
+
+## Docker 构建与运行
+
+> 本步骤编写时的环境没有 Docker，`Dockerfile` / `docker-compose.yml` **未实际构建运行**，仅经 hadolint 静态检查与人工审阅；首次使用请先 `docker compose build` 并看 `docker compose ps` 的健康状态。
 
 ```bash
 # 1. 准备环境变量（勿提交真实密钥）
@@ -82,7 +93,7 @@ VITE_STATIC_DEMO=true VITE_BASE=/jarvis-holographic/ \
 2. **按 IP 令牌桶限流**：`/api/llm` 与 `/_AMapService`；`/api/health`、`/api/config` 不限流。超限 `429` + `Retry-After`。
 3. **安全响应头**：CSP、`X-Content-Type-Options`、`X-Frame-Options`、`Permissions-Policy`（camera/mic 仅 self）、`Referrer-Policy: strict-origin-when-cross-origin`。
    - **不要**改成 `no-referrer`：高德控制台域名白名单依赖 Referer。
-   - CSP 已允许 `https://webapi.amap.com`、`'wasm-unsafe-eval'`、`blob:` worker 等；真机联调可先 `CSP_REPORT_ONLY=1`。
+   - CSP 已允许 `https://webapi.amap.com`、`'wasm-unsafe-eval'`、`blob:`（troika 文字 worker 通过 `importScripts(blob:)` 加载，需要 `script-src blob:`）及 worker/字体/媒体等；真机联调高德（真实 Key）可先 `CSP_REPORT_ONLY=1`。
 4. **TRUST_PROXY 陷阱**：错误设为 `true` 且直接暴露公网时，客户端可伪造 `X-Forwarded-For`，限流按假 IP 计数。只信任你控制的反代跳数（如 Nginx/Fly/Render 前的 `1`）。反代应用真实客户端 IP **覆盖**（不要追加）`X-Forwarded-For`。
 5. **静态缓存**：带 hash 的 `dist/assets/*` 用长期 immutable；`index.html` 用 `no-cache`。
 
