@@ -12,49 +12,8 @@ import HolographicSuit from './components/HolographicSuit';
 import AMapView from './components/AMapView';
 import ObjectScanOverlay from './components/ObjectScanOverlay';
 import EyeTargetOverlay from './components/EyeTargetOverlay';
-
-// Speech Recognition Types
-interface SpeechRecognitionEvent extends Event {
-    results: SpeechRecognitionResultList;
-    resultIndex: number;
-}
-
-interface SpeechRecognitionResultList {
-    length: number;
-    item(index: number): SpeechRecognitionResult;
-    [index: number]: SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionResult {
-    isFinal: boolean;
-    length: number;
-    item(index: number): SpeechRecognitionAlternative;
-    [index: number]: SpeechRecognitionAlternative;
-}
-
-interface SpeechRecognitionAlternative {
-    transcript: string;
-    confidence: number;
-}
-
-interface SpeechRecognition extends EventTarget {
-    continuous: boolean;
-    interimResults: boolean;
-    lang: string;
-    start(): void;
-    stop(): void;
-    abort(): void;
-    onresult: (event: SpeechRecognitionEvent) => void;
-    onerror: (event: any) => void;
-    onend: () => void;
-}
-
-declare global {
-    interface Window {
-        SpeechRecognition: any;
-        webkitSpeechRecognition: any;
-    }
-}
+import type { SpeechRecognition, SpeechRecognitionEvent } from './types/speechRecognition';
+import { isWakeWord, parseCommand } from './commands/commandParser';
 
 type VoiceMode = 'idle' | 'listening' | 'processing' | 'speaking';
 
@@ -94,21 +53,6 @@ const App: React.FC = () => {
   const speakingRef = useRef(false);
   const lastSpokenRef = useRef('');
   const ttsEndAtRef = useRef(0);
-
-  const getCityCandidate = useCallback((t: string) => {
-    const s = t.trim();
-    const zh = s.match(/定位到\s*(.+)/);
-    if (zh && zh[1]) {
-      const name = zh[1].replace(/的?地图|地图|城市|市|\.$|。$/gi, '').trim();
-      return name.length >= 2 ? name : null;
-    }
-    const en = s.match(/locate\s+to\s+(.+)/i);
-    if (en && en[1]) {
-      const name = en[1].replace(/map|city|\.$/gi, '').trim();
-      return name.length >= 2 ? name : null;
-    }
-    return null;
-  }, []);
 
   const setVoice = (mode: VoiceMode) => {
     voiceModeRef.current = mode;
@@ -153,12 +97,7 @@ const App: React.FC = () => {
     try { recognitionInstance?.stop(); } catch {}
     SoundService.stopMicAnalysis();
 
-    const isWake = (
-      transcript.includes('hello jarvis') ||
-      transcript.includes('hey jarvis') ||
-      transcript.includes('jarvis') ||
-      transcript.includes('你好 jarvis')
-    );
+    const isWake = isWakeWord(transcript);
 
     if (voiceModeRef.current === 'idle' && !isWake && !commandActive) {
       processingRef.current = false;
@@ -166,7 +105,7 @@ const App: React.FC = () => {
       return;
     }
 
-    if (voiceModeRef.current === 'idle' && (transcript.includes('hello jarvis') || transcript.includes('hey jarvis') || transcript.includes('jarvis'))) {
+    if (voiceModeRef.current === 'idle' && isWake) {
       await SoundService.speak('For you sir, always.');
       wakeSessionRef.current = true;
       sessionExpiresAtRef.current = Date.now() + 60000;
@@ -179,23 +118,9 @@ const App: React.FC = () => {
       return;
     }
 
-    const isExit = transcript.includes('over');
-    const isScan = transcript === 'scan' || transcript.includes(' scan ' ) || transcript.startsWith('scan') || transcript.includes('扫描');
-    const isScanOff = transcript.includes('scan off') || transcript.includes('stop scan') || transcript.includes('关闭扫描');
-    const isShowMark = transcript.includes('show mark');
-    const isOffMark = transcript.includes('off mark') || transcript.includes('mark off') || transcript.includes('close mark') || transcript.includes('关闭 mark');
-    const isMap = transcript.includes('map') || transcript.includes('地图');
-    const isMapOff = transcript.includes('map off') || transcript.includes('关闭地图') || transcript.includes('关闭 map') || transcript.includes('close map');
-    const isZoomIn = transcript.includes('放大') || transcript.includes('zoom in');
-    const isZoomOut = transcript.includes('缩小') || transcript.includes('zoom out');
-    const isStop = transcript.includes('stop');
-    const isReset = transcript.includes('reset');
-    const isFly = transcript.includes('fly');
-    const isLanding = transcript.includes('landing') || transcript.includes('land');
-    const isEye = transcript.includes('eye') || transcript.includes('右眼');
-    const isEyeOff = transcript.includes('eye off') || transcript.includes('关闭右眼标记');
+    const command = parseCommand(raw);
 
-    if (isExit) {
+    if (command?.type === 'exit') {
       SoundService.playRelease();
       setVoice('idle');
       setScanActive(false);
@@ -209,7 +134,7 @@ const App: React.FC = () => {
       return;
     }
 
-    if (isShowMark) {
+    if (command?.type === 'showMark') {
       SoundService.playImpact();
       setShowMark(true);
       setShowMap(true);
@@ -219,7 +144,7 @@ const App: React.FC = () => {
       return;
     }
 
-    if (isOffMark) {
+    if (command?.type === 'hideMark') {
       SoundService.playRelease();
       setShowMark(false);
       setVoice('listening');
@@ -228,18 +153,18 @@ const App: React.FC = () => {
       return;
     }
 
-    if (isStop || isReset || isFly || isLanding) {
+    if (command?.type === 'suit') {
       setShowMark(true);
-      setShowMap(!!isFly);
-      setSuitCommand(prev => ({ type: isStop ? 'stop' : isReset ? 'reset' : isLanding ? 'landing' : 'fly', tick: prev.tick + 1 }));
-      if (isFly) SoundService.playImpact();
+      setShowMap(command.action === 'fly');
+      setSuitCommand(prev => ({ type: command.action, tick: prev.tick + 1 }));
+      if (command.action === 'fly') SoundService.playImpact();
       setVoice('listening');
       processingRef.current = false;
       try { recognitionInstance?.start(); } catch {}
       return;
     }
 
-    if (isMap) {
+    if (command?.type === 'showMap') {
       setShowMap(true);
       setShowMark(false);
       setVoice('listening');
@@ -248,7 +173,7 @@ const App: React.FC = () => {
       return;
     }
 
-    if (isMapOff) {
+    if (command?.type === 'hideMap') {
       setShowMap(false);
       setVoice('listening');
       processingRef.current = false;
@@ -256,7 +181,7 @@ const App: React.FC = () => {
       return;
     }
 
-    if (isScan) {
+    if (command?.type === 'scanOn') {
       setScanActive(true);
       setShowMap(false);
       setShowMark(false);
@@ -266,7 +191,7 @@ const App: React.FC = () => {
       return;
     }
 
-    if (isScanOff) {
+    if (command?.type === 'scanOff') {
       setScanActive(false);
       setVoice('listening');
       processingRef.current = false;
@@ -274,7 +199,7 @@ const App: React.FC = () => {
       return;
     }
 
-    if (isEye) {
+    if (command?.type === 'eyeOn') {
       setEyeActive(true);
       setVoice('listening');
       processingRef.current = false;
@@ -282,7 +207,7 @@ const App: React.FC = () => {
       return;
     }
 
-    if (isEyeOff) {
+    if (command?.type === 'eyeOff') {
       setEyeActive(false);
       setVoice('listening');
       processingRef.current = false;
@@ -290,17 +215,17 @@ const App: React.FC = () => {
       return;
     }
 
-    if (isZoomIn || isZoomOut) {
-      if (isZoomIn) mapControlRef.current?.zoomIn();
-      if (isZoomOut) mapControlRef.current?.zoomOut();
+    if (command?.type === 'zoom') {
+      if (command.direction === 'in') mapControlRef.current?.zoomIn();
+      if (command.direction === 'out') mapControlRef.current?.zoomOut();
       setVoice('listening');
       processingRef.current = false;
       try { recognitionInstance?.start(); } catch {}
       return;
     }
 
-    const city = getCityCandidate(raw);
-    if (city) {
+    if (command?.type === 'locate') {
+      const city = command.city;
       if (!showMap) {
         setShowMap(true);
         setShowMark(false);
@@ -318,12 +243,7 @@ const App: React.FC = () => {
       const now = Date.now();
       const inSession = wakeSessionRef.current && now < sessionExpiresAtRef.current;
       if (!commandActive && !inSession) {
-        if (
-          transcript.includes('hello jarvis') ||
-          transcript.includes('hey jarvis') ||
-          transcript.includes('jarvis') ||
-          transcript.includes('你好 jarvis')
-        ) {
+        if (isWake) {
           wakeSessionRef.current = true;
           sessionExpiresAtRef.current = now + 60000;
           setVoice('listening');
@@ -391,8 +311,7 @@ const App: React.FC = () => {
         if (speakingRef.current || now - ttsEndAtRef.current < 1200) return;
         const norm = (s: string) => s.trim().toLowerCase().replace(/[\.,;!，。！？、]/g, '');
         if (lastSpokenRef.current && norm(transcriptRaw) === norm(lastSpokenRef.current)) return;
-        const lower = transcriptRaw.trim().toLowerCase();
-        const isWakeCandidate = lower.includes('jarvis') || lower.includes('hello jarvis') || lower.includes('hey jarvis') || lower.includes('你好 jarvis');
+        const isWakeCandidate = isWakeWord(transcriptRaw);
         const short = transcriptRaw.trim().length < 3;
         if (!isWakeCandidate && short && confidence < 0.6) return;
         await handleCommand(transcriptRaw);
