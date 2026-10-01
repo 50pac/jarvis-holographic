@@ -430,7 +430,7 @@ const AMapView = forwardRef<{ zoomIn: () => void; zoomOut: () => void; locateCit
       <div ref={containerRef} className="w-full h-full" />
       {mapStatus === 'no_key' && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 bg-black/70 text-holo-cyan border border-holo-cyan/40 rounded text-[12px]">
-          缺少 AMAP_KEY，地图未加载
+          未配置高德地图 Key，地图未加载
         </div>
       )}
       {mapStatus === 'error' && (
