@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getCityCandidate, isWakeWord, parseCommand, type ParsedCommand } from './commandParser';
+import { listArmors } from '../armors/armorRegistry';
 
 describe('isWakeWord', () => {
   it.each(['jarvis', 'hello jarvis', 'hey jarvis', '你好 jarvis', '  HELLO JARVIS  '])(
@@ -43,6 +44,8 @@ describe('parseCommand', () => {
     ['eye off', { type: 'eyeOff' }],
     ['关闭右眼标记', { type: 'eyeOff' }],
     ['show mark', { type: 'showMark' }],
+    ['mark', null],
+    ['show mark 85', { type: 'showMark' }],
     ['off mark', { type: 'hideMark' }],
     ['mark off', { type: 'hideMark' }],
     ['close mark', { type: 'hideMark' }],
@@ -65,6 +68,22 @@ describe('parseCommand', () => {
     ['island', null],
     ['hello jarvis', null],
     ['  MAP OFF  ', { type: 'hideMap' }],
+    ['换装', { type: 'armorPicker', open: true }],
+    ['换甲', { type: 'armorPicker', open: true }],
+    ['战甲库', { type: 'armorPicker', open: true }],
+    ['战甲', { type: 'armorPicker', open: true }],
+    ['armor', { type: 'armorPicker', open: true }],
+    ['ARMORS', { type: 'armorPicker', open: true }],
+    ['suit up', { type: 'armorPicker', open: true }],
+    ['next armor', { type: 'armorSwitch', target: 'next' }],
+    ['下一套', { type: 'armorSwitch', target: 'next' }],
+    ['下一件战甲', { type: 'armorSwitch', target: 'next' }],
+    ['上一套', { type: 'armorSwitch', target: 'prev' }],
+    ['上一件战甲', { type: 'armorSwitch', target: 'prev' }],
+    ['previous armor', { type: 'armorSwitch', target: 'prev' }],
+    ['prev armor', { type: 'armorSwitch', target: 'prev' }],
+    ['last armor', { type: 'armorSwitch', target: 'prev' }],
+    ['stealthy', null],
     ['', null],
   ];
 
@@ -76,6 +95,20 @@ describe('parseCommand', () => {
     expect(parseCommand('scan   off')).toEqual({ type: 'scanOff' });
     expect(parseCommand('close\tmap')).toEqual({ type: 'hideMap' });
     expect(parseCommand('show\nmark')).toEqual({ type: 'showMark' });
+    expect(parseCommand('NEXT\tARMOR')).toEqual({ type: 'armorSwitch', target: 'next' });
+    expect(parseCommand('  SUIT   UP  ')).toEqual({ type: 'armorPicker', open: true });
+    expect(parseCommand(' MARK   42 ')).toEqual({ type: 'armorSwitch', target: 'id', id: 'mark-42' });
+  });
+
+  it('switches to every built-in armor by each alias', () => {
+    for (const armor of listArmors()) {
+      for (const alias of armor.aliases) {
+        expect(parseCommand(alias)).toEqual({ type: 'armorSwitch', target: 'id', id: armor.id });
+      }
+      expect(parseCommand(armor.id)).toEqual({ type: 'armorSwitch', target: 'id', id: armor.id });
+      expect(parseCommand(armor.nameEn)).toEqual({ type: 'armorSwitch', target: 'id', id: armor.id });
+      expect(parseCommand(armor.nameZh)).toEqual({ type: 'armorSwitch', target: 'id', id: armor.id });
+    }
   });
 
   it('uses the documented command and suit priorities', () => {
@@ -84,5 +117,13 @@ describe('parseCommand', () => {
     expect(parseCommand('reset fly landing')).toEqual({ type: 'suit', action: 'reset' });
     expect(parseCommand('fly landing')).toEqual({ type: 'suit', action: 'landing' });
     expect(parseCommand('zoom out zoom in')).toEqual({ type: 'zoom', direction: 'in' });
+    expect(parseCommand('mark off mark 3')).toEqual({ type: 'hideMark' });
+    expect(parseCommand('show mark 85')).toEqual({ type: 'showMark' });
+    expect(parseCommand('locate to Paris armor')).toEqual({ type: 'locate', city: 'Paris armor' });
+    expect(parseCommand('next armor mark 3')).toEqual({ type: 'armorSwitch', target: 'next' });
+    expect(parseCommand('fly mark 3')).toEqual({ type: 'armorSwitch', target: 'id', id: 'mark-3' });
+    expect(parseCommand('stop armor')).toEqual({ type: 'suit', action: 'stop' });
+    expect(parseCommand('scan armor')).toEqual({ type: 'armorPicker', open: true });
+    expect(parseCommand('over armor')).toEqual({ type: 'exit' });
   });
 });
