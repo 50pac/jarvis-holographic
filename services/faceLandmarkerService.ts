@@ -33,9 +33,8 @@ export class FaceLandmarkerService {
         numFaces: 1,
         outputFaceBlendshapes: false,
         minFaceDetectionConfidence: 0.4,
-        minFaceTrackingConfidence: 0.4,
-        minFaceLandmarkConfidence: 0.4,
-        refineLandmarks: true,
+        minTrackingConfidence: 0.4,
+        minFacePresenceConfidence: 0.4,
       });
 
       this.landmarker = landmarker;
@@ -56,4 +55,3 @@ export class FaceLandmarkerService {
     return { rightIrisCenter: { x: cx, y: cy } };
   }
 }
-

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Mesh, Vector3, AdditiveBlending, DoubleSide } from 'three';
+import { Group, Mesh, Vector3, AdditiveBlending, DoubleSide } from 'three';
 import { SoundService } from '../services/soundService';
 
 interface VoiceInterfaceProps {
@@ -8,7 +8,7 @@ interface VoiceInterfaceProps {
 }
 
 const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ mode }) => {
-  const meshRef = useRef<Mesh>(null);
+  const meshRef = useRef<Group>(null);
   const ringRef = useRef<Mesh>(null);
   const coreRef = useRef<Mesh>(null);
   const dataArray = useRef(new Uint8Array(128)); // Size for FFT
