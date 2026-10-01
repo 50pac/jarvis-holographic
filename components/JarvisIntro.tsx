@@ -19,12 +19,12 @@ const JarvisIntro: React.FC = () => {
         <div className="absolute inset-16 rounded-full border-2 border-t-holo-cyan/60 border-r-transparent border-b-holo-cyan/60 border-l-transparent animate-[spin_3s_linear_infinite]"></div>
         
         {/* 3. Inner Glow Ring */}
-        <div className="absolute inset-24 rounded-full border-4 border-holo-cyan/10 animate-pulse shadow-[0_0_30px_rgba(0,240,255,0.2)]"></div>
+        <div className="absolute inset-24 rounded-full border-4 border-holo-cyan/10 animate-pulse [box-shadow:0_0_30px_rgb(var(--hud-primary-rgb)/0.2)]"></div>
         
         {/* 4. Core Text Container */}
         <div className="relative z-10 flex flex-col items-center justify-center transform transition-all duration-1000 scale-100">
             {/* Main Title */}
-            <h1 className="text-8xl font-display font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-holo-cyan tracking-[0.15em] drop-shadow-[0_0_25px_rgba(0,240,255,0.8)] scale-y-90 animate-flash">
+            <h1 className="text-8xl font-display font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-holo-cyan tracking-[0.15em] [filter:drop-shadow(0_0_25px_var(--hud-glow))] scale-y-90 animate-flash">
                 JARVIS
             </h1>
             

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useRef, useState } from 'react';
 import VideoFeed from './components/VideoFeed';
 import HUDOverlay from './components/HUDOverlay';
 import JarvisIntro from './components/JarvisIntro';
@@ -16,6 +16,10 @@ import { useBootSequence } from './hooks/useBootSequence';
 import { useVoiceCommands } from './hooks/useVoiceCommands';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useCommandInput } from './hooks/useCommandInput';
+import { useArmorHotkeys } from './hooks/useArmorHotkeys';
+import ArmorTransitionOverlay from './components/armor/ArmorTransitionOverlay';
+
+const ArmorPicker = lazy(() => import('./components/armor/ArmorPicker'));
 
 const App: React.FC = () => {
   const handTrackingRef = useRef<HandTrackingState>({ leftHand: null, rightHand: null });
@@ -26,7 +30,7 @@ const App: React.FC = () => {
   const commandActiveRef = useRef(false);
   const {
     voiceMode, handleCommand, processingRef, speakingRef, lastSpokenRef, ttsEndAtRef,
-    showMark, showMap, scanActive, eyeActive, suitCommand, mapControlRef,
+    showMark, showMap, scanActive, eyeActive, suitCommand, mapControlRef, armor, showArmorSuit,
   } = useVoiceCommands({ recognitionRef, commandActiveRef, startTypewrite });
   const { recognitionActive } = useSpeechRecognition({
     enabled: booted, onTranscript: handleCommand, recognitionRef,
@@ -34,6 +38,8 @@ const App: React.FC = () => {
   });
   const { commandActive, commandValue, commandInputRef, setCommandValue } =
     useCommandInput(handleCommand, commandActiveRef);
+  useArmorHotkeys({ commandActiveRef, pickerOpen: armor.pickerOpen, togglePicker: armor.togglePicker,
+    closePicker: armor.closePicker, nextArmor: armor.nextArmor, prevArmor: armor.prevArmor, showArmorSuit });
 
   const handleTrackingUpdate = useCallback((newState: HandTrackingState) => {
     handTrackingRef.current = newState;
@@ -64,6 +70,8 @@ const App: React.FC = () => {
         showMark={showMark}
         showMap={showMap}
         suitCommand={suitCommand}
+        armorId={armor.armorId}
+        transition={armor.transition}
       />
 
       <HUDOverlay
@@ -73,6 +81,14 @@ const App: React.FC = () => {
         recognitionActive={recognitionActive}
         showMark={showMark}
       />
+
+      <ArmorTransitionOverlay transition={armor.transition} />
+      {armor.pickerOpen && (
+        <Suspense fallback={null}>
+          <ArmorPicker armors={armor.armors} armorId={armor.armorId} selectArmor={armor.selectArmor}
+            showArmorSuit={showArmorSuit} closePicker={armor.closePicker} />
+        </Suspense>
+      )}
 
       <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 z-40 text-center">
         <ConversationOverlay voiceMode={voiceMode} chatRole={chatRole} chatText={chatText} />

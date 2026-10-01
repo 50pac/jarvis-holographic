@@ -6,9 +6,6 @@ interface Props {
 }
 
 const KLEIN_BLUE = '#002FA7';
-const NEON_CYAN = 'rgba(0,240,255,0.9)';
-const NEON_CYAN_SOFT = 'rgba(0,240,255,0.35)';
-
 const ObjectScanOverlay: React.FC<Props> = ({ active }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -51,6 +48,9 @@ const ObjectScanOverlay: React.FC<Props> = ({ active }) => {
       }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const hudRgb = getComputedStyle(document.documentElement).getPropertyValue('--hud-primary-rgb').trim().split(/\s+/).join(',') || '0,240,255';
+      const NEON_CYAN = `rgba(${hudRgb},0.9)`;
+      const NEON_CYAN_SOFT = `rgba(${hudRgb},0.35)`;
 
       const video = document.querySelector('video') as HTMLVideoElement | null;
       if (video && initializedRef.current) {
@@ -122,7 +122,7 @@ const ObjectScanOverlay: React.FC<Props> = ({ active }) => {
             const textW = ctx.measureText(name).width;
             ctx.shadowBlur = 12;
             ctx.shadowColor = NEON_CYAN;
-            ctx.fillStyle = 'rgba(0,240,255,0.18)';
+            ctx.fillStyle = `rgba(${hudRgb},0.18)`;
             ctx.strokeStyle = NEON_CYAN_SOFT;
             ctx.beginPath();
             ctx.roundRect(x, Math.max(0, y - 18), textW + pad * 2, 16, 4);

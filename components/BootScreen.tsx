@@ -33,7 +33,7 @@ const BootScreen: React.FC<BootScreenProps> = ({ bootStep, onStart }) => {
                       </div>
                       <div className="w-full h-1 bg-gray-800 rounded overflow-hidden">
                           <div 
-                            className="h-full bg-holo-cyan shadow-[0_0_10px_#00F0FF] transition-all duration-1000 ease-out"
+                            className="h-full bg-holo-cyan [box-shadow:0_0_10px_var(--hud-glow)] transition-all duration-1000 ease-out"
                             style={{ width: bootStep === 1 ? '10%' : bootStep === 2 ? '60%' : '100%' }}
                           ></div>
                       </div>

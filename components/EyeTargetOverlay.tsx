@@ -3,9 +3,6 @@ import { FaceLandmarkerService } from '../services/faceLandmarkerService';
 
 interface Props { active: boolean; }
 
-const NEON_CYAN = 'rgba(55, 111, 255, 0.9)';
-const NEON_CYAN_SOFT = 'rgba(44, 128, 246, 0.35)';
-
 const EyeTargetOverlay: React.FC<Props> = ({ active }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -33,6 +30,9 @@ const EyeTargetOverlay: React.FC<Props> = ({ active }) => {
       tRef.current += 0.016;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const hudRgb = getComputedStyle(document.documentElement).getPropertyValue('--hud-primary-rgb').trim().split(/\s+/).join(',') || '0,240,255';
+      const NEON_CYAN = `rgba(${hudRgb},0.9)`;
+      const NEON_CYAN_SOFT = `rgba(${hudRgb},0.35)`;
 
       if (active) {
         if (!initRef.current) {
@@ -91,7 +91,7 @@ const EyeTargetOverlay: React.FC<Props> = ({ active }) => {
             const rippleR = 52 + cycle * 46;
             ctx.beginPath();
             ctx.arc(cx, cy, rippleR, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(0,240,255,${0.55 * (1 - cycle)})`;
+            ctx.strokeStyle = `rgba(${hudRgb},${0.55 * (1 - cycle)})`;
             ctx.lineWidth = 8 * (1 - cycle);
             ctx.shadowBlur = 28 * (1 - cycle);
             ctx.shadowColor = NEON_CYAN;
@@ -103,7 +103,7 @@ const EyeTargetOverlay: React.FC<Props> = ({ active }) => {
             ctx.rotate(t * 1.8);
             ctx.setLineDash([10, 8]);
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(0,240,255,${0.3 + 0.2 * Math.sin(t * 6)})`;
+            ctx.strokeStyle = `rgba(${hudRgb},${0.3 + 0.2 * Math.sin(t * 6)})`;
             ctx.lineWidth = 3;
             ctx.arc(0, 0, r2 + 12, 0, Math.PI * 1.3);
             ctx.stroke();

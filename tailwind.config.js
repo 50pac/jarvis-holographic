@@ -10,7 +10,7 @@ export default {
     extend: {
       colors: {
         'klein-blue': '#002FA7',
-        'holo-cyan': '#00F0FF',
+        'holo-cyan': 'rgb(var(--hud-primary-rgb) / <alpha-value>)',
         'holo-blue': '#00A3FF',
         'alert-red': '#FF2A2A',
       },

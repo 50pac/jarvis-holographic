@@ -110,7 +110,7 @@ const builtIns: ArmorDef[] = [
   {
     id: 'hulkbuster', nameEn: 'Hulkbuster', nameZh: '反浩克装甲',
     aliases: ['hulkbuster', '反浩克', '反浩克装甲', '重型机甲'], kind: 'procedural',
-    mech: { size: 1.55, bulk: 1.7, headStyle: 'dome', thrusterCount: 2, primaryColor: '#a61f24', secondaryColor: '#d1a335', glowColor: '#ffb65b' },
+    mech: { size: 1.55, bulk: 1.7, shoulderSize: 1.18, headStyle: 'dome', thrusterCount: 2, primaryColor: '#a61f24', secondaryColor: '#d1a335', glowColor: '#ffb65b' },
     theme: { primary: '#e44736', secondary: '#c69a32', glow: '#ffb65b', scanline: '#ff8c50' },
     sound: { pitch: 260, duration: 0.82, noise: 0.45 },
     description: '红金重型机甲，依靠大体积装甲与双推进器提供压制力。',
@@ -119,7 +119,7 @@ const builtIns: ArmorDef[] = [
   {
     id: 'atlas', nameEn: 'Atlas', nameZh: '阿特拉斯',
     aliases: ['atlas', '阿特拉斯', '原创机甲'], kind: 'procedural',
-    mech: { size: 1.3, bulk: 0.72, headStyle: 'horned', thrusterCount: 4, primaryColor: '#326a9e', secondaryColor: '#d6e3e9', glowColor: '#54edee' },
+    mech: { size: 1.3, bulk: 0.72, shoulderSize: 0.86, headStyle: 'horned', thrusterCount: 4, primaryColor: '#326a9e', secondaryColor: '#d6e3e9', glowColor: '#54edee' },
     theme: { primary: '#56dce9', secondary: '#9bb7d6', glow: '#54edee', scanline: '#a2ffff' },
     sound: { pitch: 810, duration: 0.36, noise: 0.17 },
     description: '原创蓝银机甲，修长机身与四推进器适合高速穿梭。',

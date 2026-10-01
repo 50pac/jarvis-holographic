@@ -235,6 +235,60 @@ export class SoundService {
     osc.stop(this.context.currentTime + 0.3);
   }
 
+  static playArmorSwitch(sound: { pitch: number; duration: number; noise: number }) {
+    if (!this.context || !this.gainNode) return;
+    const context = this.context;
+    const start = context.currentTime;
+    const duration = Math.max(0.15, sound.duration);
+    const pitch = Math.max(80, sound.pitch);
+
+    const sweep = context.createOscillator();
+    const sweepGain = context.createGain();
+    sweep.type = 'sawtooth';
+    sweep.frequency.setValueAtTime(pitch * 0.5, start);
+    sweep.frequency.exponentialRampToValueAtTime(pitch * 2.2, start + duration * 0.72);
+    sweep.frequency.exponentialRampToValueAtTime(pitch, start + duration);
+    sweepGain.gain.setValueAtTime(0.001, start);
+    sweepGain.gain.linearRampToValueAtTime(0.13, start + duration * 0.16);
+    sweepGain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+    sweep.connect(sweepGain);
+    sweepGain.connect(this.gainNode);
+    sweep.start(start);
+    sweep.stop(start + duration);
+
+    const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
+    const samples = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+    const noise = context.createBufferSource();
+    const filter = context.createBiquadFilter();
+    const noiseGain = context.createGain();
+    noise.buffer = buffer;
+    filter.type = 'bandpass';
+    filter.Q.value = 2;
+    filter.frequency.setValueAtTime(Math.max(120, pitch), start);
+    filter.frequency.exponentialRampToValueAtTime(pitch * 3, start + duration);
+    noiseGain.gain.setValueAtTime(Math.max(0.001, sound.noise * 0.11), start);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(this.gainNode);
+    noise.start(start);
+    noise.stop(start + duration);
+
+    const lock = context.createOscillator();
+    const lockGain = context.createGain();
+    const lockAt = start + duration * 0.84;
+    lock.type = 'square';
+    lock.frequency.setValueAtTime(pitch * 0.75, lockAt);
+    lock.frequency.exponentialRampToValueAtTime(Math.max(70, pitch * 0.22), lockAt + 0.09);
+    lockGain.gain.setValueAtTime(0.13, lockAt);
+    lockGain.gain.exponentialRampToValueAtTime(0.001, lockAt + 0.1);
+    lock.connect(lockGain);
+    lockGain.connect(this.gainNode);
+    lock.start(lockAt);
+    lock.stop(lockAt + 0.1);
+  }
+
   // Play a release sound (reverse lock)
   static playRelease() {
     if (!this.context || !this.gainNode) return;

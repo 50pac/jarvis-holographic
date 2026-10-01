@@ -22,7 +22,7 @@ const CircularGauge = ({ label, value, color = "text-holo-cyan", size = 256 }: {
     <div className={`absolute inset-2 border-2 ${color} opacity-60 rounded-full border-b-transparent border-r-transparent animate-spin-slow`}></div>
     {/* Core Value */}
     <div className="flex flex-col items-center">
-      <span className={`text-2xl font-display font-bold ${color} drop-shadow-[0_0_5px_rgba(0,240,255,0.8)]`}>{value}</span>
+      <span className={`text-2xl font-display font-bold ${color} [filter:drop-shadow(0_0_5px_var(--hud-glow))]`}>{value}</span>
       <span className="text-[8px] uppercase tracking-widest opacity-70">{label}</span>
     </div>
   </div>
@@ -146,10 +146,13 @@ const VisualsFrame = ({ hexDump, powerLevel, width = 320, height = 140 }: { hexD
     const loop = () => {
       const c = canvasRef.current; if (!c) { rafRef.current = requestAnimationFrame(loop); return; }
       const ctx = c.getContext('2d'); if (!ctx) { rafRef.current = requestAnimationFrame(loop); return; }
+      const css = getComputedStyle(document.documentElement);
+      const hudColor = css.getPropertyValue('--hud-primary').trim() || '#00F0FF';
+      const hudRgb = css.getPropertyValue('--hud-primary-rgb').trim().split(/\s+/).join(',') || '0,240,255';
       const w = c.width, h = c.height; ctx.clearRect(0,0,w,h);
       // Grid
       ctx.save();
-      ctx.globalAlpha = 0.15; ctx.strokeStyle = '#00F0FF'; ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.15; ctx.strokeStyle = hudColor; ctx.lineWidth = 1;
       const sp = 14; for (let x=0; x<w; x+=sp){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
       for (let y=0; y<h; y+=sp){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
       ctx.restore();
@@ -158,9 +161,9 @@ const VisualsFrame = ({ hexDump, powerLevel, width = 320, height = 140 }: { hexD
       const rate = powerLevel ? 40 + powerLevel * 0.6 : 60;
       const sweepY = (timeRef.current*rate) % (h+40) - 40;
       const grad = ctx.createLinearGradient(0, sweepY, 0, sweepY+40);
-      grad.addColorStop(0, 'rgba(0,240,255,0.0)');
-      grad.addColorStop(0.5, 'rgba(0,240,255,0.25)');
-      grad.addColorStop(1, 'rgba(0,240,255,0.0)');
+      grad.addColorStop(0, `rgba(${hudRgb},0)`);
+      grad.addColorStop(0.5, `rgba(${hudRgb},0.25)`);
+      grad.addColorStop(1, `rgba(${hudRgb},0)`);
       ctx.fillStyle = grad; ctx.fillRect(0, sweepY, w, 40);
       // Tri reticle
       ctx.save(); ctx.translate(w*0.5, h*0.5); ctx.rotate((timeRef.current*0.35)% (Math.PI*2));
@@ -172,7 +175,7 @@ const VisualsFrame = ({ hexDump, powerLevel, width = 320, height = 140 }: { hexD
       if (sparksRef.current.length < targetCount){ for(let i=0;i<4;i++){ sparksRef.current.push({x:Math.random()*w,y:h*Math.random(),vx:(Math.random()*0.8+0.2),vy:-(Math.random()*0.8+0.2),l:Math.random()*1+0.6}); } }
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       sparksRef.current = sparksRef.current.map(s=>{ const nx=s.x + s.vx*2; const ny=s.y + s.vy*2; const nl = s.l*0.985; return {x:nx> w?0:nx, y: ny<0? h:ny, vx:s.vx, vy:s.vy, l:nl}; }).filter(s=> s.l>0.05);
-      sparksRef.current.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,2.2,0,Math.PI*2); ctx.fillStyle = `rgba(0,240,255,${s.l})`; ctx.fill(); });
+      sparksRef.current.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,2.2,0,Math.PI*2); ctx.fillStyle = `rgba(${hudRgb},${s.l})`; ctx.fill(); });
       ctx.restore();
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -214,24 +217,24 @@ const MiniWorldMap: React.FC<{ width?: number, height?: number }> = ({ width = 3
             </feMerge>
           </filter>
           <linearGradient id="scanGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="rgba(0,240,255,0)" />
-            <stop offset="50%" stop-color="rgba(0,240,255,0.25)" />
-            <stop offset="100%" stop-color="rgba(0,240,255,0)" />
+            <stop offset="0%" stopColor="var(--hud-primary)" stopOpacity="0" />
+            <stop offset="50%" stopColor="var(--hud-primary)" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="var(--hud-primary)" stopOpacity="0" />
           </linearGradient>
         </defs>
         <rect x="0" y="0" width="100" height="64" fill="transparent" />
         {Array.from({ length: 10 }).map((_, i) => (
-          <line key={`h-${i}`} x1="0" y1={(i + 1) * 5.8} x2="100" y2={(i + 1) * 5.8} stroke="#00F0FF" strokeOpacity="0.12" strokeWidth="0.25" strokeDasharray="1.6 2.2">
+          <line key={`h-${i}`} x1="0" y1={(i + 1) * 5.8} x2="100" y2={(i + 1) * 5.8} stroke="var(--hud-primary)" strokeOpacity="0.12" strokeWidth="0.25" strokeDasharray="1.6 2.2">
             <animate attributeName="stroke-dashoffset" from="0" to="6" dur="6s" repeatCount="indefinite" />
           </line>
         ))}
         {Array.from({ length: 18 }).map((_, i) => (
-          <line key={`v-${i}`} x1={(i + 1) * 5.2} y1="0" x2={(i + 1) * 5.2} y2="64" stroke="#00F0FF" strokeOpacity="0.12" strokeWidth="0.25" strokeDasharray="1.6 2.2">
+          <line key={`v-${i}`} x1={(i + 1) * 5.2} y1="0" x2={(i + 1) * 5.2} y2="64" stroke="var(--hud-primary)" strokeOpacity="0.12" strokeWidth="0.25" strokeDasharray="1.6 2.2">
             <animate attributeName="stroke-dashoffset" from="0" to="6" dur="6s" repeatCount="indefinite" />
           </line>
         ))}
 
-        <g filter="url(#glow)" stroke="#00F0FF" strokeOpacity="0.9" strokeWidth="0.9" fill="#00F0FF" fillOpacity="0.06">
+        <g filter="url(#glow)" stroke="var(--hud-primary)" strokeOpacity="0.9" strokeWidth="0.9" fill="var(--hud-primary)" fillOpacity="0.06">
           <path d="M 8 12 L 14 9 L 22 10 L 28 14 L 32 18 L 30 22 L 26 25 L 25 30 L 22 34 L 18 33 L 16 28 L 12 24 L 10 18 Z" />
           <path d="M 20 6 L 26 5 L 30 8 L 28 12 L 22 11 Z" />
           <path d="M 32 24 L 35 26 L 36 30 L 34 32 L 31 31 Z" />
@@ -251,19 +254,19 @@ const MiniWorldMap: React.FC<{ width?: number, height?: number }> = ({ width = 3
           <path d="M 20 60 L 40 62 L 60 62 L 80 60 L 70 63 L 50 64 L 30 63 Z" />
         </g>
 
-        <g stroke="#00F0FF" strokeOpacity="0.5" strokeWidth="0.6" fill="none">
+        <g stroke="var(--hud-primary)" strokeOpacity="0.5" strokeWidth="0.6" fill="none">
           <path d="M 24 20 L 26 18 L 28 20 L 29 22 L 27 24 L 25 23 Z" />
           <path d="M 62 22 L 66 20 L 70 22 L 72 26 L 68 28 L 64 26 Z" />
           <path d="M 72 34 L 74 32 L 76 34 L 76 36 L 74 36 Z" />
         </g>
 
-        <g stroke="#00F0FF" strokeOpacity="0.35" strokeWidth="0.5" fill="none" strokeDasharray="1.8 1.6">
+        <g stroke="var(--hud-primary)" strokeOpacity="0.35" strokeWidth="0.5" fill="none" strokeDasharray="1.8 1.6">
           <path d="M 30 30 L 40 30 L 52 28 L 64 28" />
           <path d="M 64 20 L 74 22 L 86 26" />
           <path d="M 50 44 L 60 46 L 70 44" />
         </g>
 
-        <g stroke="#00F0FF" strokeOpacity="0.6" fill="none">
+        <g stroke="var(--hud-primary)" strokeOpacity="0.6" fill="none">
           <circle cx="50" cy="32" r="28" strokeDasharray="2 4">
             <animateTransform attributeName="transform" type="rotate" from="0 50 32" to="360 50 32" dur="20s" repeatCount="indefinite" />
           </circle>
@@ -276,7 +279,7 @@ const MiniWorldMap: React.FC<{ width?: number, height?: number }> = ({ width = 3
           <animate attributeName="y" from="-20" to="84" dur="6s" repeatCount="indefinite" />
         </rect>
 
-        <g fill="#00F0FF">
+        <g fill="var(--hud-primary)">
           <circle cx="28" cy="34" r="0.8" opacity="0.6">
             <animate attributeName="opacity" values="0.2;1;0.2" dur="2.2s" repeatCount="indefinite" />
           </circle>
@@ -556,6 +559,9 @@ const HUDOverlay: React.FC<HUDOverlayProps> = ({ handTrackingRef, currentRegion,
       }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const css = getComputedStyle(document.documentElement);
+      const hudColor = css.getPropertyValue('--hud-primary').trim() || '#00F0FF';
+      const hudRgb = css.getPropertyValue('--hud-primary-rgb').trim().split(/\s+/).join(',') || '0,240,255';
       const hands = handTrackingRef.current;
       
       reticleRotationRef.current += 0.05;
@@ -564,7 +570,7 @@ const HUDOverlay: React.FC<HUDOverlayProps> = ({ handTrackingRef, currentRegion,
       [hands.leftHand, hands.rightHand].forEach(hand => {
         if (hand) {
           const isRight = hand.handedness === 'Right';
-          const mainColor = isRight ? '#00F0FF' : '#00A3FF';
+          const mainColor = isRight ? hudColor : '#00A3FF';
           
           // Skeleton
           ctx.strokeStyle = mainColor;
@@ -600,7 +606,7 @@ const HUDOverlay: React.FC<HUDOverlayProps> = ({ handTrackingRef, currentRegion,
             if ([4, 8, 12, 16, 20].includes(index)) {
                 ctx.beginPath();
                 ctx.arc(x, y, 8, reticleRotationRef.current, reticleRotationRef.current + Math.PI);
-                ctx.strokeStyle = isRight ? '#FF2A2A' : '#00F0FF';
+                ctx.strokeStyle = isRight ? '#FF2A2A' : hudColor;
                 ctx.stroke();
             }
           });
@@ -629,7 +635,7 @@ const HUDOverlay: React.FC<HUDOverlayProps> = ({ handTrackingRef, currentRegion,
 
           const exp = hands.leftHand.expansionFactor;
           const isMaxed = exp > 0.95;
-          const gaugeColor = isMaxed ? '#FF2A2A' : '#00F0FF';
+          const gaugeColor = isMaxed ? '#FF2A2A' : hudColor;
 
           // Gauge Background
           ctx.beginPath();
@@ -667,7 +673,7 @@ const HUDOverlay: React.FC<HUDOverlayProps> = ({ handTrackingRef, currentRegion,
           ctx.beginPath();
           ctx.moveTo((1 - wrist.x) * canvas.width - 25, wrist.y * canvas.height);
           ctx.lineTo(gaugeX + 45, gaugeY);
-          ctx.strokeStyle = isMaxed ? 'rgba(255, 42, 42, 0.5)' : 'rgba(0, 240, 255, 0.3)';
+          ctx.strokeStyle = isMaxed ? 'rgba(255, 42, 42, 0.5)' : `rgba(${hudRgb},0.3)`;
           ctx.lineWidth = 1;
           ctx.stroke();
       }
@@ -697,7 +703,7 @@ const HUDOverlay: React.FC<HUDOverlayProps> = ({ handTrackingRef, currentRegion,
             ctx.beginPath();
             ctx.moveTo(cursorX, cursorY);
             ctx.lineTo(cursorX + 50, cursorY - 100); // Connects to top-left of where panel div renders
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
+            ctx.strokeStyle = `rgba(${hudRgb},0.5)`;
             ctx.lineWidth = 1;
             ctx.setLineDash([2, 2]);
             ctx.stroke();
@@ -864,7 +870,7 @@ const HUDOverlay: React.FC<HUDOverlayProps> = ({ handTrackingRef, currentRegion,
       
       {/* Top Left: System Status */}
       <div ref={topLeftRef} className="absolute top-8 left-8 z-30 flex flex-col gap-2 animate-pulse-fast">
-        <div className="border-l-4 border-holo-cyan pl-4 bg-black/40 p-2 backdrop-blur-sm rounded-r-lg shadow-[0_0_15px_rgba(0,240,255,0.3)]">
+        <div className="border-l-4 border-holo-cyan pl-4 bg-black/40 p-2 backdrop-blur-sm rounded-r-lg [box-shadow:0_0_15px_rgb(var(--hud-primary-rgb)/0.3)]">
           <h2 className="text-xl font-display font-bold text-white tracking-widest">Howard Lei</h2>
           <div className="h-[1px] w-32 bg-holo-cyan my-1"></div>
           <div className="text-xs text-holo-blue font-mono opacity-80">MARK VII HUD 固件 V1.0.0</div>
@@ -874,7 +880,7 @@ const HUDOverlay: React.FC<HUDOverlayProps> = ({ handTrackingRef, currentRegion,
 
       {/* Top Right: Title & Clock */}
       <div ref={topRightRef} className="absolute top-8 right-8 z-30 text-right">
-        <h1 className="text-7xl font-display font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-holo-blue drop-shadow-[0_0_15px_rgba(0,240,255,0.9)] tracking-tighter">
+        <h1 className="text-7xl font-display font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-holo-blue [filter:drop-shadow(0_0_15px_var(--hud-glow))] tracking-tighter">
           J.A.R.V.I.S.
         </h1>
         <div className="text-2xl font-mono text-holo-cyan mt-[-5px] tracking-widest flex justify-end items-center gap-4">
@@ -896,7 +902,7 @@ const HUDOverlay: React.FC<HUDOverlayProps> = ({ handTrackingRef, currentRegion,
            <ParticlePyramid size={layout.left.pyramidSize} />
            {/* Status Widget below tree */}
            <div className="mt-4 bg-black/60 border-t border-l border-holo-blue p-4 rounded-tr-xl backdrop-blur-md relative" style={{ width: layout.colWidth, height: layout.left.bioH }}>
-               <div className="absolute top-0 right-0 w-2 h-2 bg-holo-cyan shadow-[0_0_10px_#00F0FF]"></div>
+               <div className="absolute top-0 right-0 w-2 h-2 bg-holo-cyan [box-shadow:0_0_10px_var(--hud-glow)]"></div>
                <div className="text-[10px] text-gray-400 uppercase tracking-widest mb-2 border-b border-gray-700 pb-1">生物识别输入</div>
                <div className="space-y-2">
                     <div className="flex justify-between items-center">
@@ -980,7 +986,7 @@ const HUDOverlay: React.FC<HUDOverlayProps> = ({ handTrackingRef, currentRegion,
                                 <span>98%</span>
                             </div>
                             <div className="w-full bg-gray-900 h-1.5 overflow-hidden rounded-sm">
-                                <div className="bg-holo-cyan h-full w-[98%] shadow-[0_0_10px_#00F0FF] relative">
+                                <div className="bg-holo-cyan h-full w-[98%] [box-shadow:0_0_10px_var(--hud-glow)] relative">
                                     <div className="absolute top-0 left-0 h-full w-full bg-white/30 animate-[scanline_1s_linear_infinite]"></div>
                                 </div>
                             </div>
