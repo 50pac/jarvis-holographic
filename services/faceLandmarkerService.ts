@@ -1,4 +1,5 @@
 import { FilesetResolver, FaceLandmarker } from "@mediapipe/tasks-vision";
+import { WASM_PATH, modelPath } from "./mediapipeAssets";
 
 export interface EyeLandmarks {
   rightIrisCenter: { x: number; y: number } | null;
@@ -13,32 +14,25 @@ export class FaceLandmarkerService {
     if (this.initPromise) return this.initPromise;
 
     this.initPromise = (async () => {
-      let vision;
       try {
-        vision = await FilesetResolver.forVisionTasks(
-          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9/wasm"
-        );
-      } catch (e) {
-        vision = await FilesetResolver.forVisionTasks(
-          "https://unpkg.com/@mediapipe/tasks-vision@0.10.9/wasm"
-        );
+        const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
+
+        const landmarker = await FaceLandmarker.createFromOptions(vision, {
+          baseOptions: { modelAssetPath: modelPath("face_landmarker.task"), delegate: "GPU" },
+          runningMode: "VIDEO",
+          numFaces: 1,
+          outputFaceBlendshapes: false,
+          minFaceDetectionConfidence: 0.4,
+          minTrackingConfidence: 0.4,
+          minFacePresenceConfidence: 0.4,
+        });
+
+        this.landmarker = landmarker;
+        return landmarker;
+      } catch (error) {
+        this.initPromise = null;
+        throw error;
       }
-
-      const modelUrl =
-        "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
-
-      const landmarker = await FaceLandmarker.createFromOptions(vision, {
-        baseOptions: { modelAssetPath: modelUrl, delegate: "GPU" },
-        runningMode: "VIDEO",
-        numFaces: 1,
-        outputFaceBlendshapes: false,
-        minFaceDetectionConfidence: 0.4,
-        minTrackingConfidence: 0.4,
-        minFacePresenceConfidence: 0.4,
-      });
-
-      this.landmarker = landmarker;
-      return landmarker;
     })();
 
     return this.initPromise;
