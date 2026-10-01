@@ -6,6 +6,9 @@
 
 这是一个受钢铁侠 HUD 启发的交互演示：摄像头画面与 MediaPipe 手势识别驱动 3D 地球和战术地形，叠加全息 HUD、扫描与情报面板。还支持语音或键盘文字命令、DeepSeek 对话、高德地图及钢铁侠战甲模型。场景由 React、React Three Fiber（R3F）和 three.js 渲染，音效与朗读由浏览器提供。
 
+- 张掌短暂蓄力后发射掌心炮；支持 `palm cannon on/off` 与 `fire` / `blast` / `开火` / `掌心炮` 命令。
+- 握拳展开战甲护盾；支持 `shield on/off`。战斗配置保存在 localStorage 键 `jarvis.palmCannon.v1`。
+
 ## 截图
 
 截图待补充。请将图片放入 `docs/screenshots/`；命名和 README 引用方式见 [截图约定](docs/README.md)。此处暂不引用尚不存在的图片。

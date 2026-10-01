@@ -76,11 +76,13 @@ const VideoFeed: React.FC<VideoFeedProps> = ({ onTrackingUpdate }) => {
                         );
                         const isPinching = pinchDist < 0.05;
 
+                        const gestureCategory = results.gestures?.[index]?.reduce((best, category) =>
+                          !best || category.score > best.score ? category : best, undefined as (typeof results.gestures)[number][number] | undefined);
                         let expansionFactor = 0;
                         let rotationControl = { x: 0, y: 0 };
 
                         if (handedness === 'Left') {
-                            // Left Hand: Expansion/Zoom Control
+                            // Preserve the existing left-hand pinch/zoom mapping.
                             const minPinch = 0.02;
                             const maxPinch = 0.18;
                             const normalized = (pinchDist - minPinch) / (maxPinch - minPinch);
@@ -104,9 +106,34 @@ const VideoFeed: React.FC<VideoFeedProps> = ({ onTrackingUpdate }) => {
                         const handData: HandInteractionData = {
                           landmarks,
                           handedness,
+                          gesture: gestureCategory?.categoryName,
+                          gestureScore: gestureCategory?.score,
+                          // A frontal palm has a strong plane normal toward the camera.
+                          // MediaPipe handedness/mirroring varies, so this is a facing magnitude only.
+                          palmNormalZ: (() => {
+                            const a = landmarks[5], b = landmarks[17], c = landmarks[9], w = landmarks[0];
+                            if (!a || !b || !c || !w) return undefined;
+                            const ux = b.x - a.x, uy = b.y - a.y, uz = b.z - a.z;
+                            const vx = c.x - w.x, vy = c.y - w.y, vz = c.z - w.z;
+                            const nz = ux * vy - uy * vx;
+                            const length = Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, nz);
+                            return length > 1e-6 ? -Math.abs(nz / length) : undefined;
+                          })(),
                           isPinching,
                           pinchDistance: pinchDist,
                           expansionFactor,
+                          combatExpansionFactor: (() => {
+                            const wrist = landmarks[0];
+                            if (!wrist) return undefined;
+                            const distance = (point: typeof wrist) => Math.hypot(point.x - wrist.x, point.y - wrist.y);
+                            const pairs = [[8, 6], [12, 10], [16, 14], [20, 18]] as const;
+                            const extensions = pairs.map(([tip, joint]) => {
+                              if (!landmarks[tip] || !landmarks[joint]) return null;
+                              const ratio = distance(landmarks[tip]) / Math.max(0.001, distance(landmarks[joint]));
+                              return Math.max(0, Math.min(1, (ratio - 1.05) / 0.45));
+                            }).filter((value): value is number => value !== null);
+                            return extensions.length === 4 ? extensions.reduce((sum, value) => sum + value, 0) / 4 : undefined;
+                          })(),
                           rotationControl
                         };
 

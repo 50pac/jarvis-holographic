@@ -9,6 +9,8 @@ import { getMechHeight } from '../armors/mechParams';
 import type { ArmorTransition } from '../hooks/useArmor';
 import { HandTrackingState } from '../types';
 import { SoundService } from '../services/soundService';
+import PalmCannonFx from './PalmCannonFx';
+import type { PalmCannonConfig } from '../gestures/palmCannon';
 
 const ProceduralMech = lazy(() => import('./armor/ProceduralMech'));
 
@@ -22,11 +24,14 @@ function applyMaterialValues(material: THREE.Material, values?: MaterialValues):
   material.needsUpdate = true;
 }
 
-export default function HolographicSuit({ handTrackingRef, command, armorId, transition }: {
+export default function HolographicSuit({ handTrackingRef, command, armorId, transition,
+  palmCannonConfig, palmFire }: {
   handTrackingRef: React.MutableRefObject<HandTrackingState>;
   command?: { type: 'stop' | 'reset' | 'fly' | 'landing' | null; tick: number };
   armorId: string;
   transition: ArmorTransition;
+  palmCannonConfig: PalmCannonConfig;
+  palmFire: { tick: number; atMs: number };
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const armor = getArmor(armorId) ?? getArmor(DEFAULT_ARMOR_ID)!;
@@ -911,6 +916,9 @@ export default function HolographicSuit({ handTrackingRef, command, armorId, tra
 
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
+      <PalmCannonFx handTrackingRef={handTrackingRef} flyActiveRef={flyActiveRef}
+        landingActiveRef={landingActiveRef} config={palmCannonConfig}
+        manualFire={palmFire} color={armor.theme.glow} />
       <ambientLight intensity={0.4} />
       <directionalLight position={[2, 2, 4]} intensity={0.6} />
       {armor.kind === 'glb' && processed && (

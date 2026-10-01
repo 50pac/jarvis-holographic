@@ -15,7 +15,10 @@ export type ParsedCommand =
   | { type: 'locate'; city: string }
   | { type: 'armorPicker'; open: true }
   | { type: 'armorSwitch'; target: 'next' | 'prev' }
-  | { type: 'armorSwitch'; target: 'id'; id: string };
+  | { type: 'armorSwitch'; target: 'id'; id: string }
+  | { type: 'palmCannonToggle'; enabled: boolean }
+  | { type: 'shieldToggle'; enabled: boolean }
+  | { type: 'palmFire' };
 
 /** Wake phrases use the same case-insensitive, trimmed matching as the voice handler. */
 export function isWakeWord(transcript: string): boolean {
@@ -67,6 +70,14 @@ export function parseCommand(raw: string): ParsedCommand | null {
   if (city) return { type: 'locate', city };
 
   if (/\bshow\s+mark\b/.test(text)) return { type: 'showMark' };
+
+  if (/\bpalm\s+cannon\s+off\b/.test(text)) return { type: 'palmCannonToggle', enabled: false };
+  if (/\bpalm\s+cannon\s+on\b/.test(text)) return { type: 'palmCannonToggle', enabled: true };
+  if (/\bshield\s+off\b/.test(text)) return { type: 'shieldToggle', enabled: false };
+  if (/\bshield\s+on\b/.test(text)) return { type: 'shieldToggle', enabled: true };
+  if (/\bpalm\s+cannon\b|\bfire\b|\bblast\b/.test(text) || text.includes('开火') || text.includes('掌心炮')) {
+    return { type: 'palmFire' };
+  }
 
   if (/\bnext\s+armor\b/.test(text) || text.includes('下一套') || text.includes('下一件战甲')) {
     return { type: 'armorSwitch', target: 'next' };

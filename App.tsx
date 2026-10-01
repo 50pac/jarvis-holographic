@@ -30,7 +30,8 @@ const App: React.FC = () => {
   const commandActiveRef = useRef(false);
   const {
     voiceMode, handleCommand, processingRef, speakingRef, lastSpokenRef, ttsEndAtRef,
-    showMark, showMap, scanActive, eyeActive, suitCommand, mapControlRef, armor, showArmorSuit,
+    showMark, showMap, scanActive, eyeActive, suitCommand, palmCannonConfig, palmFire,
+    mapControlRef, armor, showArmorSuit,
   } = useVoiceCommands({ recognitionRef, commandActiveRef, startTypewrite });
   const { recognitionActive } = useSpeechRecognition({
     enabled: booted, onTranscript: handleCommand, recognitionRef,
@@ -70,6 +71,8 @@ const App: React.FC = () => {
         showMark={showMark}
         showMap={showMap}
         suitCommand={suitCommand}
+        palmCannonConfig={palmCannonConfig}
+        palmFire={palmFire}
         armorId={armor.armorId}
         transition={armor.transition}
       />

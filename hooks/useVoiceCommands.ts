@@ -5,6 +5,7 @@ import { LLMService } from '../services/llmService';
 import { SoundService } from '../services/soundService';
 import type { SpeechRecognition } from '../types/speechRecognition';
 import { useArmor } from './useArmor';
+import { loadPalmCannonConfig, savePalmCannonConfig } from '../gestures/palmCannon';
 
 export type VoiceMode = 'idle' | 'listening' | 'processing' | 'speaking';
 export type SuitCommand = { type: 'stop' | 'reset' | 'fly' | 'landing' | null; tick: number };
@@ -32,6 +33,8 @@ export function useVoiceCommands({ recognitionRef, commandActiveRef, startTypewr
   const [scanActive, setScanActive] = useState(false);
   const [eyeActive, setEyeActive] = useState(false);
   const [suitCommand, setSuitCommand] = useState<SuitCommand>({ type: null, tick: 0 });
+  const [palmCannonConfig, setPalmCannonConfig] = useState(loadPalmCannonConfig);
+  const [palmFire, setPalmFire] = useState({ tick: 0, atMs: 0 });
   const mapControlRef = useRef<MapControls | null>(null);
   const timeoutRefs = useRef(new Set<number>());
   const mountedRef = useRef(true);
@@ -136,6 +139,25 @@ export function useVoiceCommands({ recognitionRef, commandActiveRef, startTypewr
       if (command?.type === 'hideMark') {
         SoundService.playRelease();
         setShowMark(false);
+        setVoice('listening');
+        return;
+      }
+
+      if (command?.type === 'palmCannonToggle' || command?.type === 'shieldToggle') {
+        setPalmCannonConfig(previous => {
+          const next = command.type === 'palmCannonToggle'
+            ? { ...previous, enabled: command.enabled }
+            : { ...previous, shieldEnabled: command.enabled };
+          savePalmCannonConfig(next);
+          return next;
+        });
+        setVoice('listening');
+        return;
+      }
+
+      if (command?.type === 'palmFire') {
+        setShowMark(true);
+        setPalmFire(previous => ({ tick: previous.tick + 1, atMs: Date.now() }));
         setVoice('listening');
         return;
       }
@@ -271,6 +293,7 @@ export function useVoiceCommands({ recognitionRef, commandActiveRef, startTypewr
 
   return {
     voiceMode, handleCommand, processingRef, speakingRef, lastSpokenRef, ttsEndAtRef,
-    showMark, showMap, scanActive, eyeActive, suitCommand, mapControlRef, armor, showArmorSuit,
+    showMark, showMap, scanActive, eyeActive, suitCommand, palmCannonConfig, palmFire,
+    mapControlRef, armor, showArmorSuit,
   };
 }

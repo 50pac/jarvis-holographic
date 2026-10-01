@@ -53,6 +53,16 @@ describe('parseCommand', () => {
     ['stop', { type: 'suit', action: 'stop' }],
     ['reset', { type: 'suit', action: 'reset' }],
     ['fly', { type: 'suit', action: 'fly' }],
+    ['palm cannon on', { type: 'palmCannonToggle', enabled: true }],
+    ['palm cannon off', { type: 'palmCannonToggle', enabled: false }],
+    ['shield on', { type: 'shieldToggle', enabled: true }],
+    ['shield off', { type: 'shieldToggle', enabled: false }],
+    ['开火', { type: 'palmFire' }],
+    ['掌心炮', { type: 'palmFire' }],
+    ['fire', { type: 'palmFire' }],
+    ['blast', { type: 'palmFire' }],
+    ['firewall', null],
+    ['blaster', null],
     ['land', { type: 'suit', action: 'landing' }],
     ['landing', { type: 'suit', action: 'landing' }],
     ['zoom in', { type: 'zoom', direction: 'in' }],
@@ -98,6 +108,7 @@ describe('parseCommand', () => {
     expect(parseCommand('NEXT\tARMOR')).toEqual({ type: 'armorSwitch', target: 'next' });
     expect(parseCommand('  SUIT   UP  ')).toEqual({ type: 'armorPicker', open: true });
     expect(parseCommand(' MARK   42 ')).toEqual({ type: 'armorSwitch', target: 'id', id: 'mark-42' });
+    expect(parseCommand('PALM   CANNON\tOFF')).toEqual({ type: 'palmCannonToggle', enabled: false });
   });
 
   it('switches to every built-in armor by each alias', () => {

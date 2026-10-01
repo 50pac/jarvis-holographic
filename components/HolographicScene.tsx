@@ -7,6 +7,7 @@ import VoiceInterface from './VoiceInterface';
 import type { HandTrackingState, RegionName } from '../types';
 import type { SuitCommand, VoiceMode } from '../hooks/useVoiceCommands';
 import type { ArmorTransition } from '../hooks/useArmor';
+import type { PalmCannonConfig } from '../gestures/palmCannon';
 
 interface HolographicSceneProps {
   handTrackingRef: MutableRefObject<HandTrackingState>;
@@ -17,10 +18,13 @@ interface HolographicSceneProps {
   suitCommand: SuitCommand;
   armorId: string;
   transition: ArmorTransition;
+  palmCannonConfig: PalmCannonConfig;
+  palmFire: { tick: number; atMs: number };
 }
 
 export default function HolographicScene({
   handTrackingRef, setRegion, voiceMode, showMark, showMap, suitCommand, armorId, transition,
+  palmCannonConfig, palmFire,
 }: HolographicSceneProps) {
   return (
     <div className="absolute inset-0 z-10 pointer-events-none">
@@ -40,7 +44,8 @@ export default function HolographicScene({
 
           {showMark && (
             <group position={[0, 0, 0]}>
-              <HolographicSuit handTrackingRef={handTrackingRef} command={suitCommand} armorId={armorId} transition={transition} />
+              <HolographicSuit handTrackingRef={handTrackingRef} command={suitCommand} armorId={armorId}
+                transition={transition} palmCannonConfig={palmCannonConfig} palmFire={palmFire} />
             </group>
           )}
         </Suspense>
