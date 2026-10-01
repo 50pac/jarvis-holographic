@@ -1,0 +1,23 @@
+services:
+  jarvis:
+    build: .
+    env_file: .env
+    environment:
+      PORT: 8787
+      HOST: 0.0.0.0
+      TRUST_PROXY: ${TRUST_PROXY:-}
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-}
+      RATE_LIMIT_LLM_PER_MIN: ${RATE_LIMIT_LLM_PER_MIN:-}
+      RATE_LIMIT_LLM_BURST: ${RATE_LIMIT_LLM_BURST:-}
+      RATE_LIMIT_AMAP_PER_MIN: ${RATE_LIMIT_AMAP_PER_MIN:-}
+      RATE_LIMIT_AMAP_BURST: ${RATE_LIMIT_AMAP_BURST:-}
+      HSTS: ${HSTS:-}
+      CSP_REPORT_ONLY: ${CSP_REPORT_ONLY:-}
+      CSP_SCRIPT_UNSAFE_EVAL: ${CSP_SCRIPT_UNSAFE_EVAL:-}
+    # Left: host port; right: container port. For localhost only (recommended behind a reverse proxy),
+    # use "127.0.0.1:${HOST_PORT:-8787}:8787" instead.
+    ports:
+      - "${HOST_PORT:-8787}:8787"
+    restart: unless-stopped
+
+# Browser camera and microphone access require HTTPS or localhost.

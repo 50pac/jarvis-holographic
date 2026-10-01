@@ -1,9 +1,12 @@
+import { STATIC_DEMO } from './staticDemo';
+
 export class LLMService {
   static initialize(): void {
     // The server owns LLM configuration.
   }
 
   static async generateResponse(prompt: string): Promise<string> {
+    if (STATIC_DEMO) return 'Sir, this is a static demonstration without a backend. LLM services are unavailable.';
     try {
       const res = await fetch('/api/llm', {
         method: 'POST',

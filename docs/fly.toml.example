@@ -1,0 +1,37 @@
+# 示例：Fly.io。复制到仓库根并改名为 fly.toml 后使用（本仓库不在根目录放置，避免误触发部署）。
+#   fly launch --no-deploy --copy-config --name <你的应用名>
+#   fly secrets set LLM_API_KEY=... AMAP_KEY=... AMAP_SECURITY_CODE=...
+#   fly deploy
+app = "your-jarvis-app"
+primary_region = "hkg"          # 面向中国大陆用户常选香港；按需修改
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8787"
+  HOST = "0.0.0.0"
+  NODE_ENV = "production"
+  # Fly 的边缘代理在容器前面 1 跳；让 Express 信任它，限流才能按真实客户端 IP 计数。
+  TRUST_PROXY = "1"
+  # 部署后改成你的域名（可逗号分隔多个）：
+  # ALLOWED_ORIGIN = "https://your-jarvis-app.fly.dev"
+  HSTS = "1"
+
+[http_service]
+  internal_port = 8787
+  force_https = true             # 摄像头/麦克风必须 HTTPS
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/api/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

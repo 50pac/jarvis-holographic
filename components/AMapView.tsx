@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, forwardRef, useImperativeHandle, useState } from 'react';
 import { HandTrackingState } from '../types';
+import { STATIC_DEMO } from '../services/staticDemo';
 
 declare global {
   interface Window {
@@ -11,7 +12,7 @@ declare global {
 const AMapView = forwardRef<{ zoomIn: () => void; zoomOut: () => void; locateCity: (name: string) => void }, { handTrackingRef: React.MutableRefObject<HandTrackingState>, command?: { type: 'stop' | 'reset' | 'fly' | 'landing' | null; tick: number } }>(({ handTrackingRef, command }, ref) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
-  const statusRef = useRef<'init' | 'loading' | 'ready' | 'error' | 'no_key'>('init');
+  const statusRef = useRef<'init' | 'loading' | 'ready' | 'error' | 'no_key' | 'static'>('init');
   const rafRef = useRef<number | null>(null);
   const lastClosedLeftRef = useRef<boolean>(false);
   const lastIndexPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -46,7 +47,7 @@ const AMapView = forwardRef<{ zoomIn: () => void; zoomOut: () => void; locateCit
   const tileReadyCountRef = useRef<number>(0);
   const tileReadyRef = useRef<boolean>(false);
   const [mapVisible, setMapVisible] = useState<boolean>(false);
-  const [mapStatus, setMapStatus] = useState<'init' | 'no_key' | 'error'>('init');
+  const [mapStatus, setMapStatus] = useState<'init' | 'no_key' | 'error' | 'static'>('init');
   const lastIdxLeftRef = useRef<number | null>(null);
   const lastIdxRightRef = useRef<number | null>(null);
   const rotVelRef = useRef<number>(0);
@@ -114,6 +115,11 @@ const AMapView = forwardRef<{ zoomIn: () => void; zoomOut: () => void; locateCit
   }), []);
 
   useEffect(() => {
+    if (STATIC_DEMO) {
+      statusRef.current = 'static';
+      setMapStatus('static');
+      return;
+    }
     let cancelled = false;
     const ensureScript = async () => {
       const response = await fetch('/api/config');
@@ -428,9 +434,9 @@ const AMapView = forwardRef<{ zoomIn: () => void; zoomOut: () => void; locateCit
   return (
     <div className={`absolute inset-0 z-9 ${mapVisible || mapStatus !== 'init' ? '' : 'opacity-0 pointer-events-none'}`}>
       <div ref={containerRef} className="w-full h-full" />
-      {mapStatus === 'no_key' && (
+      {(mapStatus === 'no_key' || mapStatus === 'static') && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 bg-black/70 text-holo-cyan border border-holo-cyan/40 rounded text-[12px]">
-          未配置高德地图 Key，地图未加载
+          {mapStatus === 'static' ? '静态演示模式：无后端，高德地图不可用' : '未配置高德地图 Key，地图未加载'}
         </div>
       )}
       {mapStatus === 'error' && (
