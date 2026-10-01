@@ -13,8 +13,34 @@ export default defineConfig({
       '/_AMapService': proxyTarget,
     },
   },
-  plugins: [react()],
-  assetsInclude: ['**/*.task'],
+  plugins: [
+    react(),
+    {
+      // troika-three-text bundles a default CDN URL (jsdelivr) for unicode fallback fonts.
+      // index.tsx already points unicodeFontsURL at a local path; strip the dead default so the
+      // bundle contains no external font URL at all.
+      name: 'strip-troika-unicode-cdn',
+      transform(code, id) {
+        if (!id.includes('troika-three-text') || !code.includes('cdn.jsdelivr.net/gh/lojjic/unicode-font-resolver')) return null;
+        return code.replace(/https:\/\/cdn\.jsdelivr\.net\/gh\/lojjic\/unicode-font-resolver@[^"'`]*/g, '/fonts/unicode');
+      },
+    },
+  ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('/node_modules/')) return;
+          if (/\/node_modules\/(?:react|react-dom|scheduler)\//.test(id)) return 'react';
+          if (id.includes('/node_modules/@mediapipe/')) return 'mediapipe';
+          if (id.includes('/node_modules/@react-three/')) return 'r3f';
+          if (/\/node_modules\/(?:three|three-stdlib|postprocessing)\//.test(id)) return 'three';
+        },
+      },
+    },
+    // Three.js and MediaPipe remain large even after splitting, so allow their vendor chunks.
+    chunkSizeWarningLimit: 1200,
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),
