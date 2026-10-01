@@ -1,196 +1,218 @@
-# J.A.R.V.I.S. Holographic Interface v2.0
-一个受钢铁侠 HUD 启发的全息交互界面：实时摄像头画面、手势识别控制地球与战术地形、分层式 HUD 信息面板与声效反馈，并集成 LLM 对话（DeepSeek API）与高德地图（AMap）控制，开箱配置即用的前端演示项目。
+# J.A.R.V.I.S. Holographic Interface
 
-很高兴将本项目的完整代码开源！这是我近期探索“AI+交互”的一个趣味实践，希望能为同样对AI应用开发感兴趣的朋友提供一些参考和灵感。
+本仓库是 [xxjun9527/jarvis-holographic](https://github.com/xxjun9527/jarvis-holographic) 的 fork 焕新版。这个 fork 完成了安全加固与依赖升级（秘密 Key 只在服务端代理）、`App.tsx` 拆分重构与命令解析单测、去 CDN 的资源本地化与 GLB 压缩，以及 README 与 CI。fork 维护：**50pac**；原作者：**xxjun9527**。
 
-关于代码使用，有几个温馨提醒：
+## 简介与特性
 
-## 📖 最佳起点
-- 我已尽力完善README.md` 文档
-- 请务必先阅读文档，预计能解决80%的配置问题
+这是一个受钢铁侠 HUD 启发的交互演示：摄像头画面与 MediaPipe 手势识别驱动 3D 地球和战术地形，叠加全息 HUD、扫描与情报面板。还支持语音或键盘文字命令、DeepSeek 对话、高德地图及钢铁侠战甲模型。场景由 React、React Three Fiber（R3F）和 three.js 渲染，音效与朗读由浏览器提供。
 
----
+## 截图
 
-## ⏳ 精力有限，望您理解
-- 作为普通AI小博主，我白天要处理公司事务，晚上维护项目和社群
-- 无法提供一对一的无偿技术咨询，尤其是环境配置、API申请等基础问题
-- 如果遇到问题，建议先查看 Issues 或搜索相关错误信息
-
----
-
-## 🤝 我们可以这样互动
-- 发现Bug或有改进建议 → 欢迎提交 Pull Request 或 Issue
-- 有共性的技术问题 → 我可能会在社群或视频中统一解答
-- 想深入交流 → 可以关注我的抖音进粉丝群（老雷AI洞见），那里有更多同好一起讨论
-
----
-
-开源是为了分享与启发，而非提供免费技术支持。相信理解独立开发者时间宝贵的朋友，一定能体谅这份约定的初衷。
-
-感谢您的理解与支持！如果这个项目给您带来了灵感，记得给个 Star ⭐️ 鼓励哦～
-
-## 功能特性
-
-- 实时摄像头背景层，叠加手部骨架、指尖瞄准与状态徽标
-- 右手水平位移控制地球旋转速度；左手拇指-食指捏合控制“扩展/缩放”并在高阈值切换至战术地形
-- 右手捏合弹出“GEO_INTEL_LIVE”情报面板，随指尖位置漂移并有锁定/释放音效
-- 3D 地球（纹理、云层、线框、轨道、卫星粒子）与战术斜视地形（网格、峰值标记、雷达环）
-- 全屏 HUD 叠层：系统标题与时钟、仪表盘、目录/状态面板、通讯订阅列表、扫描线与暗角效果
-- 声效与 TTS：启动提示、伺服电机感、地图切换、锁定/释放，以及“Hello. I am Jarvis.” 语音
-
-## 技术栈
-
-- 前端框架：`React 18`、`TypeScript`
-- 构建工具：`Vite 6`（开发端口 `3000`，网络可访问）
-- 3D/渲染：`three`、`@react-three/fiber`、`@react-three/drei`、`@react-three/postprocessing`、`postprocessing`
-- 手势识别：`@mediapipe/tasks-vision`（通过 CDN 加载 WASM，GPU 委托）
-- 样式：`Tailwind CSS`（CDN 运行时配置自定义主题/动画）
-- 音频：WebAudio API 与 `SpeechSynthesis` 需科学上网才能调用
-- 地图：`AMap Web JS API v2.0`
-
-## 目录结构
-
-```
-├─ components/
-│  ├─ VideoFeed.tsx         # 摄像头采集与每帧识别、手势状态派发
-│  ├─ HolographicEarth.tsx  # 地球与战术地形的 3D 场景
-│  ├─ HUDOverlay.tsx        # 叠层式 HUD 与手势 UI 联动
-│  ├─ JarvisIntro.tsx       # 启动引导屏动画
-│  ├─ HolographicSuit.tsx   # 战甲模型与喷射/光束特效
-│  ├─ AMapView.tsx          # 高德地图视图与手势/语音联动
-│  ├─ EyeTargetOverlay.tsx  # 右眼瞄准环 HUD（人脸地标联动）
-│  └─ ObjectScanOverlay.tsx # 物体检测扫描 HUD（演示效果）
-├─ services/
-│  ├─ mediapipeService.ts   # MediaPipe 初始化与识别器管理
-│  ├─ llmService.ts         # LLM 对话封装（OpenAI/DeepSeek 兼容接口）
-│  ├─ soundService.ts       # 音效与 TTS 封装
-│  ├─ faceLandmarkerService.ts      # 人脸地标识别
-│  └─ objectDetectionService.ts     # 物体检测（演示）
-├─ App.tsx                  # 应用根视图与引导/主界面切换
-├─ index.tsx                # React 入口
-├─ index.html               # 宿主文档、Tailwind CDN、importmap 与样式
-├─ types.ts                 # 手势与面板等类型定义
-├─ vite.config.ts           # 开发服务配置与环境变量注入
-├─ package.json             # 依赖与脚本
-└─ .env.local               # 环境变量（LLM 与 AMap 配置）
-```
+截图待补充。请将图片放入 `docs/screenshots/`；命名和 README 引用方式见 [截图约定](docs/README.md)。此处暂不引用尚不存在的图片。
 
 ## 快速开始
 
-1. 安装依赖：
-   ```bash
-   npm install
-   ```
-2. 配置环境变量：在项目根目录创建 `.env.local`（或使用系统环境变量），并设置下述键值（详见下文“配置说明”）：
-   ```bash
-   # DeepSeek / OpenAI 兼容 LLM 接口
-   LLM_BASE_URL=https://api.deepseek.com
-   LLM_API_KEY=<你的 DeepSeek API Key>
-   LLM_MODEL=deepseek-chat   # 或 deepseek-reasoner 等
+需要 **Node.js >=20.12** 和 npm。首次安装可用 `npm install`；CI 或按锁文件可复现安装用 `npm ci`。
 
-   # 高德地图 Web JS API
-   AMAP_KEY=<你的高德 key>
-   AMAP_SECURITY_CODE=<你的安全码>  # 或 AMAP_SECRET
-   ```
-3. 启动开发服务器：
-   ```bash
-   npm run dev
-   # 访问 http://localhost:3000/
-   ```
+```bash
+npm install
+cp .env.example .env.local
+# 编辑 .env.local，按需填写 LLM 与高德配置
+npm run dev
+```
 
-> Node 版本建议：推荐 `Node >= 20`（避免某些插件的引擎警告）。在 `Node 18` 下仍可正常运行但可能提示警告。
+`npm run dev` 用 `concurrently` 同时启动 Vite 前端（http://localhost:3000）和 Node 代理（默认 http://localhost:8787）。首次进入需要允许浏览器访问摄像头；语音识别建议使用 Chrome，并确保浏览器能连接其语音服务。
 
-## 手势与交互说明
+生产构建与本地运行：
 
-- 右手横向位移（`landmarks[9].x` 中心锚点）映射到旋转速度：向左为负、向右为正（`components/HolographicEarth.tsx:321`）
-- 左手捏合距离（拇指尖 `4` 与食指尖 `8` 的距离）归一化为扩展因子：低值近似最大扩展，高值近似最小（`components/VideoFeed.tsx:71`）
-- 当扩展因子 > 0.55，触发地形模式与“地图切换”音效（`components/HolographicEarth.tsx:364`）
-- 右手捏合（距离阈值 < 0.05）弹出情报面板，松开则隐藏，并播放锁定/释放音效（`components/HUDOverlay.tsx:270`）
-- 启动流程：点击“初始化 J.A.R.V.I.S.”后播放启动音、引导屏语音，再进入主界面（`App.tsx:499`）
+```bash
+npm run build
+npm start
+# 默认访问 http://localhost:8787
+```
 
-### 语音与命令
+`npm start` 由 `server/index.js` 托管构建后的 `dist/` 和 `/api`，因此要先构建。其他脚本：
 
-- 唤醒与会话：`hello jarvis` / `hey jarvis` / `jarvis` / `你好 jarvis`
-- 地图控制：`map` 打开，`map off` 关闭；`定位到 北京` 或 `locate to Beijing`
-- 扫描：`scan` 开启，`scan off` 关闭
-- 标记与战甲：`show mark` 显示战甲，`mark off` 关闭
-- 缩放：`zoom in` / `zoom out`（也可左手握拳/张开触发）
-- 任务：`reset` / `stop` / `fly` / `landing`（分别复位/停止/飞行/降落；战甲与地图均响应）
-- 右眼瞄准环：`eye` 开启，`eye off` 关闭
-- 结束会话：`over`
+| 脚本 | 用途 |
+| --- | --- |
+| `npm run dev:web` | 只启动 Vite 前端；API 仍需另开代理 |
+| `npm run dev:server` | 只启动 Node 代理 |
+| `npm run preview` | 用 Vite 预览已有构建产物 |
+| `npm run typecheck` | TypeScript 静态检查 |
+| `npm test` | 运行 Vitest 命令解析单测 |
 
-### 键盘文字交互
+## 架构
 
-- `Enter` 打开/提交命令输入框，`Esc` 关闭输入框
-- 可以通过文字方式跟 J.A.R.V.I.S 交互，例如：`hello jarvis`、`fly`、`show mark` 等
+```text
+浏览器：React + Vite + R3F + MediaPipe
+  ├─ 本地摄像头、手势、3D/HUD、Web Speech API
+  ├─ /api/*、/_AMapService/* ──> server/index.js（Express 5）
+  │                              ├─ /api/health：健康检查
+  │                              ├─ /api/config：高德 JS Key 与配置状态
+  │                              ├─ /api/llm：代理 DeepSeek 对话
+  │                              └─ /_AMapService：附加高德安全码
+  └─ webapi.amap.com：高德 JS API 与地图资源
+```
 
-## 开发说明
+`LLM_API_KEY` 和 `AMAP_SECURITY_CODE` 只在服务端使用，不写入浏览器 bundle。`AMAP_KEY` 是 Web 端 JS API Key，会经 `/api/config` 下发到浏览器；它本来就是公开 Key，必须在高德控制台设置域名白名单。开发时 Vite 将 `/api` 和 `/_AMapService` 转发至 Node 服务；生产时 Node 同时托管前端与 API。
 
-- MediaPipe 初始化：
-  - 首选从 `jsDelivr` 加载 WASM，失败时回退到 `unpkg`（`services/mediapipeService.ts:18`、`services/mediapipeService.ts:25`）
-  - 识别器运行模式为 `VIDEO`，`numHands: 2`（`services/mediapipeService.ts:30`）
-- 视频播放与权限：自动播放可能被浏览器阻止，代码在 `VideoFeed` 中做了元数据与交互回退（`components/VideoFeed.tsx:31`）
-- 音频与 TTS：首次交互后通过 `SoundService.initialize()` 恢复 `AudioContext`；TTS 优先选用英式男声（`services/soundService.ts:96-143`、`services/soundService.ts:22-35`）
-- 样式：`index.html` 内通过 Tailwind CDN 配置自定义颜色与动画，避免额外构建步骤
-- 外部资源：地球纹理来自 three 官方示例仓库；网络不可用时可能降级
+## 目录结构
 
-## 配置说明（DeepSeek API 与高德地图）
+以下依据本仓库 `git ls-files` 中的文件整理；`public/` 的二进制资源按用途概括。
 
-### DeepSeek API（LLM 对话）
-- 官网：[https://www.deepseek.com/](https://www.deepseek.com/)
-- 环境变量读取位置：`services/llmService.ts:6-10`（`LLM_BASE_URL`、`LLM_API_KEY`、`LLM_MODEL`）
-- 请求路径：`/v1/chat/completions`（OpenAI 兼容）
-- 示例 `.env.local` 配置：
-  ```bash
-  LLM_BASE_URL=https://api.deepseek.com
-  LLM_API_KEY=sk-xxxxx
-  LLM_MODEL=deepseek-chat
-  ```
-- 说明：在 DeepSeek 控制台申请 API Key；本项目以非流式响应展示文本，并通过浏览器 `SpeechSynthesis` 播读
+```text
+.
+├─ commands/                 命令解析器与 Vitest 单测
+│  ├─ commandParser.ts        唤醒词、定位与命令优先级
+│  └─ commandParser.test.ts   命令解析测试
+├─ hooks/                    启动、键盘输入、语音识别/会话和打字效果
+│  ├─ useVoiceCommands.ts     命令执行、会话状态与场景控制
+│  ├─ useSpeechRecognition.ts 浏览器语音识别生命周期
+│  └─ useCommandInput.ts      Enter/Esc 键盘命令框
+├─ components/               摄像头、3D 场景、HUD、地图、战甲与交互界面
+│  ├─ VideoFeed.tsx           摄像头采集与手势状态
+│  ├─ HolographicEarth.tsx    3D 地球与战术地形
+│  ├─ HUDOverlay.tsx          HUD 与 GEO_INTEL 情报面板
+│  ├─ AMapView.tsx            高德地图与手势平移/缩放
+│  └─ HolographicSuit.tsx     战甲 GLB 与交互特效
+├─ services/                 MediaPipe 资源/识别、LLM、物体/人脸检测和音效
+│  ├─ mediapipeAssets.ts      本地 WASM 和模型的路径
+│  └─ llmService.ts           同源 /api/llm 请求与错误提示
+├─ server/index.js           Express 代理与 dist 静态托管
+├─ public/                   原样发布的 MediaPipe WASM 与模型
+│  ├─ mediapipe/wasm/        与 tasks-vision 版本配套的 WASM
+│  └─ models/                手势、人脸、物体检测模型
+├─ assets/                   构建时导入的地球贴图和战甲 GLB
+│  ├─ img/                   地球纹理
+│  └─ modules/ironman.glb    战甲模型
+├─ types/                    Web Speech API 类型；根目录 types.ts 为交互类型
+├─ docs/                     文档、screenshots/ 截图目录与 ci.yml.example（CI 工作流示例）
+├─ App.tsx                   启动与主界面编排
+├─ index.tsx / index.html    React 入口与页面模板
+├─ index.css                 自定义样式
+├─ postcss.config.js         PostCSS（Tailwind、Autoprefixer）
+├─ tsconfig.json / vite-env.d.ts  TypeScript 配置与 Vite 类型声明
+├─ metadata.json / prompt.md 原项目的应用元数据与初版提示词（保留）
+├─ LICENSE                   MIT 许可证
+├─ tailwind.config.js        Tailwind 扫描范围与主题
+├─ vite.config.ts            Vite 开发代理与构建配置
+├─ .env.example              环境变量模板
+└─ package.json              脚本、Node 要求与依赖
+```
 
-### 高德地图（AMap Web JS API）
-- 官网：[https://lbs.amap.com/](https://lbs.amap.com/)
-- 环境变量读取位置：`components/AMapView.tsx:115-127`（`AMAP_KEY`、`AMAP_SECURITY_CODE` 或 `AMAP_SECRET`）
-- 加载方式：运行时注入 `<script src="https://webapi.amap.com/maps?v=2.0&key=...">`（`components/AMapView.tsx:121-131`）
-- 示例 `.env.local` 配置：
-  ```bash
-  AMAP_KEY=xxxxxxxxxxxxxxxxxxxxxxxx
-  AMAP_SECURITY_CODE=yyyyyyyyyyyyyyyy
-  ```
-- 说明：在高德开放平台创建应用并启用 Web 端；若使用安全码，需启用安全校验。地图打开后可通过手势捏合、右手拖拽与语音指令控制缩放/平移/
+## 手势与语音命令
 
-### 环境变量注入（Vite）
+手势数据来自 `components/VideoFeed.tsx`；地球、情报面板和地图的响应分别在对应组件中实现。距离使用摄像头画面归一化坐标。
 
-- 注入位置：`vite.config.ts:15-22` 使用 `define` 将 `.env.local` 键映射到 `process.env.*`，供前端使用。
+| 手势 | 效果 |
+| --- | --- |
+| 右手移动 | 以 `landmarks[9]` 相对画面中心的水平/垂直位置控制地球旋转/倾斜速度；各轴绝对值 `>0.1` 才覆盖该轴默认速度。 |
+| 左手拇指尖与食指尖距离 | 将捏合距离按 `0.02–0.18` 归一化为 `expansionFactor`；地球逐渐淡出、战术地形逐渐显现，平滑后的值 `>0.55` 触发地形模式切换音效。 |
+| 右手捏合 `<0.05` | 在语音空闲且未显示战甲时弹出 `GEO_INTEL_LIVE` 情报面板；松开隐藏。 |
+| 地图中右手强捏合 `<0.045` | 非飞行状态下，移动食指拖拽平移地图。 |
+| 地图中左手 `expansionFactor <0.25` 持续 500 ms | 放大一级；保持同一姿势只触发一次。 |
+| 地图中左手 `expansionFactor >0.6` 持续 500 ms | 缩小一级；保持同一姿势只触发一次。 |
+
+语音和文字都交给 `commands/commandParser.ts` 解析。英文触发词大小写不敏感，关键词使用词边界，词间空白宽松：`scan   off` 可用；`discover`、`island` 不会误触发，`discover the map` 仍会打开地图。定位城市名保留原始大小写，清理后至少要有 2 个字符。
+
+| 命令触发词（英文 / 中文） | 效果 |
+| --- | --- |
+| `scan off`、`stop scan` / `关闭扫描` | 关闭物体扫描 |
+| `eye off` / `关闭右眼标记` | 关闭右眼标记 |
+| `mark off`、`off mark`、`close mark` / `关闭 mark` | 隐藏战甲标记 |
+| `map off`、`close map` / `关闭地图`、`关闭 map` | 关闭地图 |
+| `over` | 结束唤醒会话，并关闭扫描、右眼标记、战甲标记与地图 |
+| `locate to X` / `定位到 X` | 打开地图并定位城市 `X`；如 `locate to Paris`、`定位到北京` |
+| `show mark` | 显示战甲标记与地图 |
+| `stop`、`reset`、`land` / `landing`、`fly` | 分别停止、复位、降落、飞行的战甲动作；`fly` 同时显示地图 |
+| `map` / `地图` | 打开地图并隐藏战甲标记 |
+| `scan` / `扫描` | 开启扫描，关闭地图与战甲标记 |
+| `eye` / `右眼` | 开启右眼标记 |
+| `zoom in` / `放大`；`zoom out` / `缩小` | 地图放大 / 缩小一级 |
+
+匹配优先级是 **关闭类 > `over` > 定位 > `show mark` > `stop` / `reset` / `land(ing)` / `fly` > 地图 > 扫描 > 右眼 > 缩放**。同一战甲动作组内按 `stop`、`reset`、`land(ing)`、`fly` 匹配；缩放同时出现时先匹配放大。
+
+唤醒词包括 `hello jarvis`、`hey jarvis`、`你好 jarvis`、`jarvis`；`isWakeWord` 用 `includes` 检查，因此包含 `jarvis` 的句子也可唤醒。唤醒会话为 **60 秒**，会话内非命令内容发送给 DeepSeek；`over` 可提前结束。语音识别的 `lang` 固定为 `en-US`，所以中文命令更适合键盘输入：按 **Enter** 打开命令框，再按 Enter 提交；按 **Esc** 关闭。
+
+## 配置说明
+
+复制 `.env.example` 为 `.env.local`。`server/index.js` 依次用 `process.loadEnvFile` 读取 `.env.local` 和 `.env`；已存在的进程环境变量优先，先读取的 `.env.local` 值也优先于 `.env`。真实 Key 不要提交到仓库。
+
+| 变量 | 用途与默认值 |
+| --- | --- |
+| `PORT` | Node 服务端口，默认 `8787` |
+| `HOST` | 可选，Node 监听地址，默认 `0.0.0.0` |
+| `LLM_BASE_URL` | LLM API 根地址，默认 `https://api.deepseek.com` |
+| `LLM_API_KEY` | 服务端 DeepSeek API Key；留空时 LLM 不可用 |
+| `LLM_MODEL` | 模型名，默认 `deepseek-chat` |
+| `AMAP_KEY` | 高德 Web 端（JS API）Key，通过 `/api/config` 下发 |
+| `AMAP_SECURITY_CODE` | 高德安全码，仅服务端代理使用 |
+
+DeepSeek 请求由服务端非流式 `POST {LLM_BASE_URL}/v1/chat/completions` 发送；`/api/llm` 会校验消息角色、数量与长度（最多 20 条、单条 8000 字符、合计 24000 字符，JSON 请求体上限 32 KB）。未设置 `LLM_API_KEY` 时返回 503，界面显示 **“Systems offline.”**
+
+高德 JS Key 经 `/api/config` 下发，浏览器从 `webapi.amap.com` 加载 JS API；高德安全码由 `/_AMapService` 代理附加为 `jscode`，不要放进前端。在高德开放平台为 Web 端（JS API）Key 配置域名白名单，包含本地 `localhost` 和实际部署域名。
+
+## 静态资源与模型
+
+`public/mediapipe/wasm/` 和 `public/models/` 随站点本地发布。升级 `@mediapipe/tasks-vision` 时，要把**同版本**的 WASM 文件重新复制到 `public/mediapipe/wasm/`：
+
+```bash
+cp node_modules/@mediapipe/tasks-vision/wasm/* public/mediapipe/wasm/
+```
+
+战甲模型位于 `assets/modules/ironman.glb`。第 4 步用 meshopt + WebP 将其从约 **68.2 MB 压到 12.3 MB**，保留原三角面；当时使用的参数如下（重新压缩时将输入/输出路径替换为实际文件）：
+
+```bash
+npx @gltf-transform/cli optimize in.glb out.glb --compress meshopt --texture-compress webp --simplify false
+```
+
+模型由 `useLoader(GLTFLoader)` 配合 `MeshoptDecoder` 加载。避免改用 drei `useGLTF` 的默认 Draco 配置，它会请求 `gstatic`。WebP 贴图需要现代浏览器。Tailwind CSS 在构建期生成；新增源码目录时，确保 `tailwind.config.js` 的 `content` 覆盖它。当前扫描 `./index.html` 与 `./**/*.{ts,tsx}`，排除 `node_modules/`、`dist/`。
+
+**模型许可需自行核对。**原版 README 称钢铁侠模型“仅用于演示与交互，不得用于商业用途”；当前 GLB 内嵌元数据则标注标题 **Iron Man Mark 85**、作者 [LLIypuk](https://sketchfab.com/LLIypuk)、许可 **CC-BY-4.0**、[Sketchfab 来源](https://sketchfab.com/3d-models/iron-man-mark-85-8da781aa74024366844b36444c650d69)。两处表述并列保留；商用或再分发前请以 Sketchfab 页面当前许可为准自行核对，至少按 CC-BY 要求署名。`gesture_recognizer`、`face_landmarker`、`efficientdet_lite0` 来自 Google MediaPipe 模型库；商用前请逐一核对模型卡片许可。
+
+高德地图需要联网访问 `webapi.amap.com`，DeepSeek 对话也需要服务端访问其 API；其余前端静态资源均在本地，不依赖运行时 CDN。
+
+## 已知限制
+
+- 尚未在真实摄像头与 GPU 上完整实测手势识别和战甲交互；此前用假摄像头、软件渲染和独立 GLB 页面做过冒烟验证。
+- 高德地图需要联网；语音识别依赖浏览器支持（建议 Chrome）及其在线语音服务，语言固定为 `en-US`。
+- 仓库 Git 历史仍保留原始约 68 MB GLB；`public/` 中的 WASM 与模型二进制约 37 MB。
+- WebP 贴图需要现代浏览器；troika 的 Unicode 字体目录目前没有实际文件，非 ASCII 的 3D 文字可能缺字。
+- 在非根路径部署开发或生产站点时，需要设置合适的 Vite `base`，并检查同源 API 路径。
 
 ## 常见问题
 
-- 摄像头无法工作：确保浏览器已授予摄像头权限；在系统层面未被占用；HTTPS/本地环境下的安全策略允许访问。
-- 无声或语音不播放：浏览器可能在未交互前暂停 `AudioContext` 或 `SpeechSynthesis`；点击“初始化 J.A.R.V.I.S.”后即可恢复。
-- 引擎警告：在 `npm install` 时可能提示 `@vitejs/plugin-react` 的 Node 引擎要求；升级至 Node 20+ 可消除警告。
-- CDN 资源加载失败：检查网络并重试；MediaPipe 有内置回退源；也可自建静态资源镜像。
-- 浏览器兼容性：Chrome 89+ 才支持 `SpeechSynthesis`；Firefox 95+ 才支持 `MediaPipe`。
-- 语音模式需要`科学上网`，否则会出现语音识别和播放失败的情况。
-- 语音模式不支持的情况下，可以使用文字模式跟 J.A.R.V.I.S 交互。
+| 现象 | 检查方式 |
+| --- | --- |
+| 摄像头没有画面 | 检查浏览器/系统权限、是否被其他应用占用，以及 HTTPS 或 `localhost` 安全上下文。 |
+| 没有声音或 TTS | 先点击初始化按钮以解锁浏览器音频；确认系统音量、浏览器语音合成和可用语音。 |
+| 语音不识别 | 使用 Chrome，允许麦克风，并确认其语音服务可访问；识别语言为 `en-US`，中文可改用键盘文字输入。 |
+| 高德地图空白 | 检查 `AMAP_KEY`、`AMAP_SECURITY_CODE`、JS Key 域名白名单及与高德服务的网络连接。 |
+| LLM 显示 `Systems offline.` | 服务端未配置 `LLM_API_KEY`；填写 `.env.local` 后重启 Node 服务。 |
+| 端口冲突 | 用 `PORT` 修改 Node 端口，同时设置同值 `PROXY_PORT` 让 Vite 指向它；Vite 前端默认使用 3000。 |
+| 安装时提示 Node 引擎警告 | 检查 `node --version`，使用 Node >=20.12。 |
+| `npm start` 后白屏 | 先执行 `npm run build`，确认 `dist/` 已生成。 |
 
-## 开源与授权
+## 开发与 CI
 
-- 本项目用于学习与演示科幻 HUD 交互，严禁用于任何违反法律法规的场景。
-- 本项目使用的钢铁侠模型（`models/ironman.glb`）来自第三方模型库，仅用于演示与交互，不得用于任何商业用途。
-- 本项目不提供免费咨询服务，如需商业合作请联系项目维护者，联系方式：微信 xxjun9527。
+本地提交前可运行 `npm run typecheck`、`npm test`、`npm run build`。
 
-## 构建与部署
+CI 工作流示例在 [docs/ci.yml.example](docs/ci.yml.example)：Node 20，`actions/checkout` 与带 npm 缓存的 `actions/setup-node`，依次执行 `npm ci`、类型检查、单测、构建和生产依赖高危及以上漏洞审计（`npm audit --omit=dev --audit-level=high`）。由于推送用令牌没有 `workflow` 权限，它暂未放在 `.github/workflows/`；有权限的维护者启用方式：
 
 ```bash
-npm run build    # 生成静态文件（默认输出到 dist/）
-npm run preview  # 本地预览构建产物
+mkdir -p .github/workflows
+cp docs/ci.yml.example .github/workflows/ci.yml
 ```
 
-构建后的站点可部署至任意静态托管（需网络以加载外部纹理与 WASM，或改为本地托管这些资源）。
+## 许可证
 
-## 鸣谢
+仓库代码按 [MIT 许可证](LICENSE) 发布。第三方模型、地图服务与素材遵循各自条款，参见上文模型许可说明。
 
-- [three.js](https://threejs.org/)、[react-three-fiber](https://github.com/pmndrs/react-three-fiber)
-- [MediaPipe Tasks Vision](https://developers.google.com/mediapipe)
-- [LLIypuk-钢铁侠模型博主](https://www.youtube.com/@LLIypuk)
-- 声效与 HUD 视觉灵感来源于科幻 UI 设计与开源社区作品
+## 致谢
+
+- 上游项目：[xxjun9527/jarvis-holographic](https://github.com/xxjun9527/jarvis-holographic)。
+- 战甲模型：[LLIypuk 的 YouTube](https://www.youtube.com/@LLIypuk) 与 [Sketchfab 模型页面](https://sketchfab.com/3d-models/iron-man-mark-85-8da781aa74024366844b36444c650d69)。
+- 3D 与界面：[three.js](https://threejs.org/)、[react-three-fiber](https://github.com/pmndrs/react-three-fiber)、[drei](https://github.com/pmndrs/drei)、[Tailwind CSS](https://tailwindcss.com/)、[Vite](https://vite.dev/)。
+- 识别与服务：[MediaPipe Tasks Vision](https://developers.google.com/mediapipe)、[DeepSeek](https://www.deepseek.com/)、[高德开放平台](https://lbs.amap.com/)、[Express](https://expressjs.com/)。
+- 字体：[Fontsource Orbitron](https://fontsource.org/fonts/orbitron)、[Fontsource Rajdhani](https://fontsource.org/fonts/rajdhani)。
+- 声效与 HUD 视觉灵感来自科幻 UI 与开源社区。

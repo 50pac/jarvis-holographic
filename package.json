@@ -1,5 +1,6 @@
 {
-  "name": "j.a.r.v.i.s.-holographic-interface",
+  "name": "jarvis-holographic-interface",
+  "description": "Gesture- and voice-controlled holographic JARVIS HUD with React, Three.js, MediaPipe, and an Express proxy that keeps secret keys server-side.",
   "private": true,
   "version": "0.0.0",
   "type": "module",
