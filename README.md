@@ -86,9 +86,7 @@ npm start
 │  ├─ img/                   地球纹理
 │  └─ modules/ironman.glb    战甲模型
 ├─ types/                    Web Speech API 类型；根目录 types.ts 为交互类型
-├─ docs/                     文档与 screenshots/ 截图目录
-├─ .github/                  GitHub 仓库自动化配置
-│  └─ workflows/ci.yml       GitHub Actions 检查
+├─ docs/                     文档、screenshots/ 截图目录与 ci.yml.example（CI 工作流示例）
 ├─ App.tsx                   启动与主界面编排
 ├─ index.tsx / index.html    React 入口与页面模板
 ├─ index.css                 自定义样式
@@ -197,7 +195,14 @@ npx @gltf-transform/cli optimize in.glb out.glb --compress meshopt --texture-com
 
 ## 开发与 CI
 
-本地提交前可运行 `npm run typecheck`、`npm test`、`npm run build`。`.github/workflows/ci.yml` 在 `main` 与 `refresh/**` 分支的 push、所有 pull request 上运行：Node 20 安装锁定依赖（`npm ci`），依次执行类型检查、单测、构建和生产依赖高危及以上漏洞审计（`npm audit --omit=dev --audit-level=high`）。
+本地提交前可运行 `npm run typecheck`、`npm test`、`npm run build`。
+
+CI 工作流示例在 [docs/ci.yml.example](docs/ci.yml.example)：Node 20，`actions/checkout` 与带 npm 缓存的 `actions/setup-node`，依次执行 `npm ci`、类型检查、单测、构建和生产依赖高危及以上漏洞审计（`npm audit --omit=dev --audit-level=high`）。由于推送用令牌没有 `workflow` 权限，它暂未放在 `.github/workflows/`；有权限的维护者启用方式：
+
+```bash
+mkdir -p .github/workflows
+cp docs/ci.yml.example .github/workflows/ci.yml
+```
 
 ## 许可证
 
