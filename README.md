@@ -204,6 +204,10 @@ mkdir -p .github/workflows
 cp docs/ci.yml.example .github/workflows/ci.yml
 ```
 
+## 部署
+
+本地/局域网、Docker、Fly.io / Render / Nginx 反代 + HTTPS，以及纯静态演示（无后端时 LLM 与高德不可用）的步骤、环境变量与示例配置见 [docs/DEPLOY.md](docs/DEPLOY.md)。摄像头与麦克风要求 HTTPS 或 localhost。
+
 ## 许可证
 
 仓库代码按 [MIT 许可证](LICENSE) 发布。第三方模型、地图服务与素材遵循各自条款，参见上文模型许可说明。

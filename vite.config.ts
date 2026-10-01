@@ -3,8 +3,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 const proxyTarget = `http://127.0.0.1:${process.env.PROXY_PORT || 8787}`;
+const base = process.env.VITE_BASE || '/';
+const unicodeBase = `${base.endsWith('/') ? base : `${base}/`}fonts/unicode`;
 
 export default defineConfig({
+  base,
   server: {
     port: 3000,
     host: '0.0.0.0',
@@ -22,7 +25,7 @@ export default defineConfig({
       name: 'strip-troika-unicode-cdn',
       transform(code, id) {
         if (!id.includes('troika-three-text') || !code.includes('cdn.jsdelivr.net/gh/lojjic/unicode-font-resolver')) return null;
-        return code.replace(/https:\/\/cdn\.jsdelivr\.net\/gh\/lojjic\/unicode-font-resolver@[^"'`]*/g, '/fonts/unicode');
+        return code.replace(/https:\/\/cdn\.jsdelivr\.net\/gh\/lojjic\/unicode-font-resolver@[^"'`]*/g, unicodeBase);
       },
     },
   ],

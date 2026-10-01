@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { fileURLToPath } from 'node:url';
+import { createOriginGuard, createRateLimiter, createSecurityHeaders, parseNonNegativeInt, parseTrustProxy, setNoCache, setStaticCacheHeaders } from './security.js';
 
 const rootDir = fileURLToPath(new URL('../', import.meta.url));
 
@@ -26,6 +27,19 @@ const amapSecurityCode = process.env.AMAP_SECURITY_CODE || '';
 const llmConfigured = Boolean(llmApiKey.trim());
 const amapConfigured = Boolean(amapKey.trim() && amapSecurityCode.trim());
 const app = express();
+app.disable('x-powered-by');
+app.set('trust proxy', parseTrustProxy(process.env.TRUST_PROXY));
+app.use(createSecurityHeaders(process.env));
+
+const originGuard = createOriginGuard(process.env.ALLOWED_ORIGIN);
+const llmLimiter = createRateLimiter({
+  capacity: parseNonNegativeInt(process.env.RATE_LIMIT_LLM_BURST, 10),
+  refillPerMinute: parseNonNegativeInt(process.env.RATE_LIMIT_LLM_PER_MIN, 20),
+});
+const amapLimiter = createRateLimiter({
+  capacity: parseNonNegativeInt(process.env.RATE_LIMIT_AMAP_BURST, 120),
+  refillPerMinute: parseNonNegativeInt(process.env.RATE_LIMIT_AMAP_PER_MIN, 600),
+});
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
@@ -40,7 +54,7 @@ app.get('/api/config', (_req, res) => {
   });
 });
 
-app.post('/api/llm', express.json({ limit: '32kb' }), async (req, res) => {
+app.post('/api/llm', originGuard, llmLimiter, express.json({ limit: '32kb' }), async (req, res) => {
   if (!llmConfigured) {
     return res.status(503).json({
       error: 'llm_not_configured',
@@ -101,7 +115,7 @@ app.post('/api/llm', express.json({ limit: '32kb' }), async (req, res) => {
   }
 });
 
-app.use('/_AMapService', async (req, res) => {
+app.use('/_AMapService', originGuard, amapLimiter, async (req, res) => {
   if (!['GET', 'POST'].includes(req.method)) {
     return res.status(405).json({ error: 'method_not_allowed' });
   }
@@ -146,9 +160,10 @@ app.use('/api', (_req, res) => {
 
 const distDir = join(rootDir, 'dist');
 if (process.env.NODE_ENV === 'production' || existsSync(distDir)) {
-  app.use(express.static(distDir));
+  app.use(express.static(distDir, { setHeaders: setStaticCacheHeaders }));
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    setNoCache(res);
     res.sendFile(join(distDir, 'index.html'));
   });
 }

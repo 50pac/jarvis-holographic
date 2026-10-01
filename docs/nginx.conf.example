@@ -1,0 +1,42 @@
+# 示例：自有云服务器 + Nginx 反代 + HTTPS（证书用 certbot 申请：certbot --nginx -d jarvis.example.com）。
+# Node 服务（docker compose 或 npm start）监听 127.0.0.1:8787，只让 Nginx 对外。
+# 注意：安全头（CSP 等）由 Node 发出，这里不要重复添加，否则会出现两份 CSP 而互相收紧。
+# Node 侧需设置：TRUST_PROXY=1（信任这一层 Nginx）、ALLOWED_ORIGIN=https://jarvis.example.com、HSTS=1
+
+upstream jarvis_node {
+    server 127.0.0.1:8787;
+    keepalive 16;
+}
+
+server {
+    listen 80;
+    server_name jarvis.example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name jarvis.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/jarvis.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/jarvis.example.com/privkey.pem;
+
+    # 模型/WASM/GLB 体积较大，开启压缩（.wasm/.glb/.tflite 已含大量二进制，收益有限，主要压 js/css/json）
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml application/wasm;
+
+    client_max_body_size 64k;   # /api/llm 请求体上限 32KB
+
+    location / {
+        proxy_pass http://jarvis_node;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        # 用 $remote_addr 覆盖而不是追加，防止客户端伪造 X-Forwarded-For 绕过限流
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;   # 后端到 LLM/高德的超时是 30s
+    }
+}
