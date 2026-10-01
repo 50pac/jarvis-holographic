@@ -165,6 +165,22 @@ export function unregisterArmor(id: string): void {
   if (registry.delete(key)) notifyListeners();
 }
 
+export function isCustomArmorId(id: string): boolean {
+  return id.startsWith('custom-');
+}
+
+export function registerCustomArmor(def: ArmorDef): void {
+  if (!isCustomArmorId(def.id) || def.kind !== 'glb' || !def.modelUrl || def.materialOverride) {
+    throw new Error('Invalid custom armor definition');
+  }
+  registerArmor(def);
+}
+
+export function unregisterCustomArmor(id: string): void {
+  if (!isCustomArmorId(id)) throw new Error('Not a custom armor id');
+  unregisterArmor(id);
+}
+
 export function listArmors(): ArmorDef[] {
   return Array.from(registry.values());
 }

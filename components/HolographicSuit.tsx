@@ -3,7 +3,7 @@ import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
-import { DEFAULT_ARMOR_ID, getArmor } from '../armors/armorRegistry';
+import { DEFAULT_ARMOR_ID, getArmor, isCustomArmorId } from '../armors/armorRegistry';
 import type { MaterialValues } from '../armors/armorRegistry';
 import { getMechHeight } from '../armors/mechParams';
 import type { ArmorTransition } from '../hooks/useArmor';
@@ -328,8 +328,15 @@ export default function HolographicSuit({ handTrackingRef, command, armorId, tra
 
     const box = new THREE.Box3().setFromObject(root);
     const center = box.getCenter(new THREE.Vector3());
-    root.position.y -= center.y;
     const size = box.getSize(new THREE.Vector3());
+    if (isCustomArmorId(armor.id) && !box.isEmpty()) {
+      const maxDimension = Math.max(size.x, size.y, size.z);
+      const scale = THREE.MathUtils.clamp(2 / maxDimension, 0.01, 100);
+      root.scale.setScalar(scale);
+      root.position.sub(center.multiplyScalar(scale));
+      return { root, footOffset: -size.y * scale * 0.5 + 0.05, clonedMaterials };
+    }
+    root.position.y -= center.y;
     return { root, footOffset: -size.y * 0.5 + 0.05, clonedMaterials };
   }, [gltf, mats, armor]);
 

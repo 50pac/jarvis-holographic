@@ -89,7 +89,9 @@ const App: React.FC = () => {
       {armor.pickerOpen && (
         <Suspense fallback={null}>
           <ArmorPicker armors={armor.armors} armorId={armor.armorId} selectArmor={armor.selectArmor}
-            showArmorSuit={showArmorSuit} closePicker={armor.closePicker} />
+            showArmorSuit={showArmorSuit} closePicker={armor.closePicker}
+            customReady={armor.customReady} customBusy={armor.customBusy} customError={armor.customError}
+            uploadCustomArmor={armor.uploadCustomArmor} removeCustomArmor={armor.removeCustomArmor} />
         </Suspense>
       )}
 

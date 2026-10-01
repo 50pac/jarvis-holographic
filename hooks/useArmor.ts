@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MutableRefObject } from 'react';
 import { cycleArmorId } from '../armors/armorCycle';
 import { getArmor, listArmors, subscribeArmorRegistry } from '../armors/armorRegistry';
+import { DEFAULT_ARMOR_ID } from '../armors/armorRegistry';
 import { loadArmorId, saveArmorId } from '../armors/armorStorage';
 import { themeToCssVars } from '../armors/armorTheme';
 import { SoundService } from '../services/soundService';
+import { useCustomArmors } from './useCustomArmors';
 
 export interface ArmorTransition {
   tick: number;
@@ -19,9 +21,11 @@ interface ArmorOptions {
 }
 
 export function useArmor({ startTypewrite, speakingRef, ttsEndAtRef }: ArmorOptions) {
+  const custom = useCustomArmors();
   const [registryVersion, setRegistryVersion] = useState(0);
   const [armorId, setArmorId] = useState(() => loadArmorId(undefined, listArmors().map(armor => armor.id)));
   const armorIdRef = useRef(armorId);
+  const selectionMadeRef = useRef(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [transition, setTransition] = useState<ArmorTransition>({ tick: 0, from: null, startedAt: 0 });
   const speechTokenRef = useRef(0);
@@ -41,6 +45,7 @@ export function useArmor({ startTypewrite, speakingRef, ttsEndAtRef }: ArmorOpti
   const selectArmor = useCallback((id: string, options: { announce?: boolean } = {}) => {
     const armor = getArmor(id);
     if (!armor || armor.id === armorIdRef.current) return;
+    selectionMadeRef.current = true;
     const from = armorIdRef.current;
     armorIdRef.current = armor.id;
     setArmorId(armor.id);
@@ -61,6 +66,16 @@ export function useArmor({ startTypewrite, speakingRef, ttsEndAtRef }: ArmorOpti
     }
   }, [speakingRef, startTypewrite, ttsEndAtRef]);
 
+  useEffect(() => {
+    if (!custom.ready || selectionMadeRef.current) return;
+    const saved = loadArmorId(undefined, listArmors().map(armor => armor.id));
+    if (saved !== armorIdRef.current) selectArmor(saved, { announce: false });
+  }, [custom.ready, selectArmor]);
+
+  const removeCustomArmor = useCallback((id: string) => custom.remove(id, () => {
+    if (armorIdRef.current === id) selectArmor(DEFAULT_ARMOR_ID, { announce: false });
+  }), [custom.remove, selectArmor]);
+
   const nextArmor = useCallback(() => {
     selectArmor(cycleArmorId(listArmors().map(armor => armor.id), armorIdRef.current, 1));
   }, [selectArmor]);
@@ -71,5 +86,7 @@ export function useArmor({ startTypewrite, speakingRef, ttsEndAtRef }: ArmorOpti
   const closePicker = useCallback(() => setPickerOpen(false), []);
   const togglePicker = useCallback(() => setPickerOpen(open => !open), []);
 
-  return { armorId, armors, pickerOpen, transition, selectArmor, nextArmor, prevArmor, openPicker, closePicker, togglePicker };
+  return { armorId, armors, pickerOpen, transition, selectArmor, nextArmor, prevArmor, openPicker, closePicker, togglePicker,
+    customReady: custom.ready, customBusy: custom.busy, customError: custom.error,
+    uploadCustomArmor: custom.upload, removeCustomArmor };
 }
