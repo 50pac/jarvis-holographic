@@ -1,5 +1,5 @@
 import { FilesetResolver, GestureRecognizer } from "@mediapipe/tasks-vision";
-import modelUrl from "../assets/modules/gesture_recognizer.task?url";
+import { WASM_PATH, modelPath } from "./mediapipeAssets";
 
 export class MediaPipeService {
   private static recognizer: GestureRecognizer | null = null;
@@ -13,24 +13,11 @@ export class MediaPipeService {
 
     this.initPromise = (async () => {
       try {
-        let vision;
-        // Try loading WASM from jsDelivr (Primary)
-        try {
-             console.log("Attempting to load WASM from jsDelivr...");
-             vision = await FilesetResolver.forVisionTasks(
-              "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9/wasm"
-            );
-        } catch (e) {
-            console.warn("jsDelivr load failed, attempting fallback to unpkg...", e);
-            // Fallback to unpkg if jsDelivr fails
-            vision = await FilesetResolver.forVisionTasks(
-                "https://unpkg.com/@mediapipe/tasks-vision@0.10.9/wasm"
-            );
-        }
+        const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
 
         const recognizer = await GestureRecognizer.createFromOptions(vision, {
           baseOptions: {
-            modelAssetPath: modelUrl,
+            modelAssetPath: modelPath("gesture_recognizer.task"),
             delegate: "GPU"
           },
           runningMode: "VIDEO",

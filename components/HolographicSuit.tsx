@@ -1,14 +1,15 @@
 import { useMemo, useRef, useState } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useGLTF } from '@react-three/drei';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import modelUrl from '../assets/modules/ironman.glb?url';
 import { HandTrackingState } from '../types';
 import { SoundService } from '../services/soundService';
 
 export default function HolographicSuit({ handTrackingRef, command }: { handTrackingRef: React.MutableRefObject<HandTrackingState>, command?: { type: 'stop' | 'reset' | 'fly' | 'landing' | null; tick: number } }) {
   const groupRef = useRef<THREE.Group>(null);
-  const gltf = useGLTF(modelUrl);
+  const gltf = useLoader(GLTFLoader, modelUrl, (loader) => loader.setMeshoptDecoder(MeshoptDecoder));
   const scaleSmoothRef = useRef(1.1);
   const speedSmoothRef = useRef(0.3);
   const speedTargetRef = useRef(0.3);

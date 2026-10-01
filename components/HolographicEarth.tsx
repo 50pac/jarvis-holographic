@@ -9,6 +9,7 @@ import { SoundService } from '../services/soundService';
 import earthAtmosUrl from '../assets/img/earth_atmos_2048.jpg';
 import earthNormalUrl from '../assets/img/earth_normal_2048.jpg';
 import earthSpecularUrl from '../assets/img/earth_specular_2048.jpg';
+import orbitronFontUrl from '@fontsource/orbitron/files/orbitron-latin-700-normal.woff?url';
 
 interface HolographicEarthProps {
   handTrackingRef: React.MutableRefObject<HandTrackingState>;
@@ -344,6 +345,7 @@ const TerrainModel: React.FC<{
                                         
                                         <Text
                                             position={[0.3, 0, 0.01]}
+                                            font={orbitronFontUrl}
                                             fontSize={0.08}
                                             color="#00F0FF"
                                             anchorX="center"
