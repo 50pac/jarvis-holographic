@@ -54,6 +54,13 @@ describe('armor registry', () => {
     expect(getArmor('mark-85')?.materialOverride).toBeUndefined();
     expect(getArmor('mark-85')?.defaultScale).toBe(1.1);
     expect(getArmor('mark-85')?.footOffset).toBeUndefined();
+    expect(getArmor('mark-42')?.theme.primary).toBe('#f5c44b');
+    expect(getArmor('mark-42')?.theme.glow).toBe('#c8f5ff');
+    expect(getArmor('mark-3')?.hologram).toBeUndefined();
+    expect(getArmor('stealth')?.theme).toEqual({
+      primary: '#a8741a', secondary: '#2b2416', glow: '#ffb02e', scanline: '#8a5f18',
+    });
+    expect(getArmor('stealth')?.hologram?.wireOpacity).toBe(0.05);
   });
 
   it('matches exact names first, then bounded text with the longest alias', () => {

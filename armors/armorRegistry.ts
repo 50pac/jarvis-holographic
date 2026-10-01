@@ -29,6 +29,7 @@ export interface ArmorDef {
   kind: 'glb' | 'procedural';
   modelUrl?: string;
   materialOverride?: MaterialOverride;
+  hologram?: { wireOpacity?: number; baseOpacity?: number };
   mech?: MechParams;
   theme: ArmorTheme;
   sound: { pitch: number; duration: number; noise: number };
@@ -102,7 +103,8 @@ const builtIns: ArmorDef[] = [
         PaletteMaterial003: { color: '#0c0c10', emissive: '#e0a13a', emissiveIntensity: 0.9 },
       },
     },
-    theme: { primary: '#b18a33', secondary: '#4b3d25', glow: '#e0a13a', scanline: '#a67d32' },
+    hologram: { wireOpacity: 0.05 },
+    theme: { primary: '#a8741a', secondary: '#2b2416', glow: '#ffb02e', scanline: '#8a5f18' },
     sound: { pitch: 350, duration: 0.62, noise: 0.08 },
     description: '近黑色装甲配暗金纹路，适合隐蔽行动。',
     stats: { armor: 56, speed: 84, power: 64, stealth: 96 }, defaultScale: 1.1,

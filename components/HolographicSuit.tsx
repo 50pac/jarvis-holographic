@@ -337,7 +337,9 @@ export default function HolographicSuit({ handTrackingRef, command, armorId, tra
 
   useEffect(() => {
     mats.base.color.set(armor.theme.primary);
+    mats.base.opacity = armor.hologram?.baseOpacity ?? 0.02;
     mats.wire.color.set(armor.theme.primary);
+    mats.wire.opacity = armor.hologram?.wireOpacity ?? 0.1;
     (mats.fresnel.uniforms.uColor.value as THREE.Color).set(armor.theme.glow);
     (projectorMat.uniforms.uColor.value as THREE.Color).set(armor.theme.primary);
     (cloudMat.uniforms.uColor.value as THREE.Color).set(armor.theme.glow);
