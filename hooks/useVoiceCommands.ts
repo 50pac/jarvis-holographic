@@ -4,6 +4,7 @@ import { isWakeWord, parseCommand } from '../commands/commandParser';
 import { LLMService } from '../services/llmService';
 import { SoundService } from '../services/soundService';
 import type { SpeechRecognition } from '../types/speechRecognition';
+import { useArmor } from './useArmor';
 
 export type VoiceMode = 'idle' | 'listening' | 'processing' | 'speaking';
 export type SuitCommand = { type: 'stop' | 'reset' | 'fly' | 'landing' | null; tick: number };
@@ -24,6 +25,7 @@ export function useVoiceCommands({ recognitionRef, commandActiveRef, startTypewr
   const speakingRef = useRef(false);
   const lastSpokenRef = useRef('');
   const ttsEndAtRef = useRef(0);
+  const armor = useArmor({ startTypewrite, speakingRef, ttsEndAtRef });
   const [showMark, setShowMark] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const showMapRef = useRef(false);
@@ -42,6 +44,8 @@ export function useVoiceCommands({ recognitionRef, commandActiveRef, startTypewr
     voiceModeRef.current = mode;
     setVoiceMode(mode);
   }, []);
+
+  const showArmorSuit = useCallback(() => setShowMark(true), []);
 
   const setMapVisible = (visible: boolean) => {
     showMapRef.current = visible;
@@ -132,6 +136,21 @@ export function useVoiceCommands({ recognitionRef, commandActiveRef, startTypewr
       if (command?.type === 'hideMark') {
         SoundService.playRelease();
         setShowMark(false);
+        setVoice('listening');
+        return;
+      }
+
+      if (command?.type === 'armorPicker') {
+        armor.openPicker();
+        setVoice('listening');
+        return;
+      }
+
+      if (command?.type === 'armorSwitch') {
+        if (command.target === 'next') armor.nextArmor();
+        else if (command.target === 'prev') armor.prevArmor();
+        else if (command.target === 'id') armor.selectArmor(command.id);
+        showArmorSuit();
         setVoice('listening');
         return;
       }
@@ -248,10 +267,10 @@ export function useVoiceCommands({ recognitionRef, commandActiveRef, startTypewr
       processingRef.current = false;
       try { recognitionRef.current?.start(); } catch {}
     }
-  }, [commandActiveRef, recognitionRef, startTypewrite, setVoice]);
+  }, [commandActiveRef, recognitionRef, startTypewrite, setVoice, armor.openPicker, armor.nextArmor, armor.prevArmor, armor.selectArmor, showArmorSuit]);
 
   return {
     voiceMode, handleCommand, processingRef, speakingRef, lastSpokenRef, ttsEndAtRef,
-    showMark, showMap, scanActive, eyeActive, suitCommand, mapControlRef,
+    showMark, showMap, scanActive, eyeActive, suitCommand, mapControlRef, armor, showArmorSuit,
   };
 }

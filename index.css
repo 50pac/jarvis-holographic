@@ -10,6 +10,14 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --hud-primary: #00F0FF;
+  --hud-primary-rgb: 0 240 255;
+  --hud-secondary: #1476a8;
+  --hud-glow: #9bfaff;
+  --hud-scanline: #43dfff;
+}
+
 body {
   background-color: #000;
   overflow: hidden;
@@ -18,10 +26,10 @@ body {
 
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: rgba(0, 47, 167, 0.1); }
-::-webkit-scrollbar-thumb { background: #00F0FF; }
+::-webkit-scrollbar-thumb { background: var(--hud-primary); }
 
 .scanlines {
-  background: linear-gradient(
+  background-image: linear-gradient(
     to bottom,
     rgba(255,255,255,0),
     rgba(255,255,255,0) 50%,
@@ -34,6 +42,36 @@ body {
   pointer-events: none;
   z-index: 10;
 }
+
+.scanlines::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -12%;
+  height: 12%;
+  background: linear-gradient(to bottom, transparent, var(--hud-scanline), transparent);
+  opacity: 0.08;
+  animation: hud-scan-sweep 9s linear infinite;
+}
+
+@keyframes hud-scan-sweep {
+  to { transform: translateY(112vh); }
+}
+
+.armor-flash {
+  background: radial-gradient(ellipse at center, rgb(var(--hud-primary-rgb) / 0.3), transparent 68%);
+  animation: armor-flash 0.6s ease-out forwards;
+}
+
+@keyframes armor-flash {
+  from { opacity: 0; }
+  30% { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.armor-stat-fill { animation: armor-stat-fill 0.35s ease-out both; transform-origin: left; }
+@keyframes armor-stat-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
 .vignette {
   position: absolute;

@@ -1,15 +1,43 @@
-import { useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
-import modelUrl from '../assets/modules/ironman.glb?url';
+import { DEFAULT_ARMOR_ID, getArmor } from '../armors/armorRegistry';
+import type { MaterialValues } from '../armors/armorRegistry';
+import { getMechHeight } from '../armors/mechParams';
+import type { ArmorTransition } from '../hooks/useArmor';
 import { HandTrackingState } from '../types';
 import { SoundService } from '../services/soundService';
 
-export default function HolographicSuit({ handTrackingRef, command }: { handTrackingRef: React.MutableRefObject<HandTrackingState>, command?: { type: 'stop' | 'reset' | 'fly' | 'landing' | null; tick: number } }) {
+const ProceduralMech = lazy(() => import('./armor/ProceduralMech'));
+
+function applyMaterialValues(material: THREE.Material, values?: MaterialValues): void {
+  if (!values || !(material instanceof THREE.MeshStandardMaterial)) return;
+  if (values.color) material.color.set(values.color);
+  if (values.metalness !== undefined) material.metalness = values.metalness;
+  if (values.roughness !== undefined) material.roughness = values.roughness;
+  if (values.emissive) material.emissive.set(values.emissive);
+  if (values.emissiveIntensity !== undefined) material.emissiveIntensity = values.emissiveIntensity;
+  material.needsUpdate = true;
+}
+
+export default function HolographicSuit({ handTrackingRef, command, armorId, transition }: {
+  handTrackingRef: React.MutableRefObject<HandTrackingState>;
+  command?: { type: 'stop' | 'reset' | 'fly' | 'landing' | null; tick: number };
+  armorId: string;
+  transition: ArmorTransition;
+}) {
   const groupRef = useRef<THREE.Group>(null);
-  const gltf = useLoader(GLTFLoader, modelUrl, (loader) => loader.setMeshoptDecoder(MeshoptDecoder));
+  const armor = getArmor(armorId) ?? getArmor(DEFAULT_ARMOR_ID)!;
+  const modelUrl = armor.kind === 'glb' ? armor.modelUrl : getArmor(DEFAULT_ARMOR_ID)?.modelUrl;
+  const gltf = useLoader(GLTFLoader, modelUrl!, (loader) => loader.setMeshoptDecoder(MeshoptDecoder));
+  const modelAssemblyRef = useRef<THREE.Group>(null);
+  const scannerRef = useRef<THREE.Mesh>(null);
+  const particlesRef = useRef<THREE.Points>(null);
+  const [assemble, setAssemble] = useState(1);
+  const assembleStartRef = useRef<number | null>(null);
+  const lastArmorTickRef = useRef(transition.tick);
   const scaleSmoothRef = useRef(1.1);
   const speedSmoothRef = useRef(0.3);
   const speedTargetRef = useRef(0.3);
@@ -255,8 +283,10 @@ export default function HolographicSuit({ handTrackingRef, command }: { handTrac
   }, []);
 
   const processed = useMemo(() => {
+    if (armor.kind !== 'glb') return null;
     const root = gltf.scene.clone(true);
     const meshes: THREE.Mesh[] = [];
+    const clonedMaterials: THREE.Material[] = [];
 
     root.traverse((obj: any) => {
       if (obj.isMesh && !obj.userData?.hologramOverlay) {
@@ -265,6 +295,14 @@ export default function HolographicSuit({ handTrackingRef, command }: { handTrac
     });
 
     for (const obj of meshes) {
+      const cloneMaterial = (source: THREE.Material) => {
+        const material = source.clone();
+        applyMaterialValues(material, armor.materialOverride?.default);
+        applyMaterialValues(material, armor.materialOverride?.byMaterialName?.[source.name]);
+        clonedMaterials.push(material);
+        return material;
+      };
+      obj.material = Array.isArray(obj.material) ? obj.material.map(cloneMaterial) : cloneMaterial(obj.material);
       const geo = obj.geometry;
       const overlayWire = new THREE.Mesh(geo, mats.wire);
       overlayWire.userData.hologramOverlay = true;
@@ -287,12 +325,74 @@ export default function HolographicSuit({ handTrackingRef, command }: { handTrac
     const center = box.getCenter(new THREE.Vector3());
     root.position.y -= center.y;
     const size = box.getSize(new THREE.Vector3());
-    footOffsetRef.current = -size.y * 0.5 + 0.05;
+    return { root, footOffset: -size.y * 0.5 + 0.05, clonedMaterials };
+  }, [gltf, mats, armor]);
 
-    return root;
-  }, [gltf, mats]);
+  useEffect(() => () => processed?.clonedMaterials.forEach(material => material.dispose()), [processed]);
+
+  const footOffset = armor.footOffset ?? (armor.kind === 'procedural' && armor.mech
+    ? -getMechHeight(armor.mech) * 0.5 + 0.05
+    : processed?.footOffset ?? -0.6);
+  footOffsetRef.current = footOffset;
+
+  useEffect(() => {
+    mats.base.color.set(armor.theme.primary);
+    mats.base.opacity = armor.hologram?.baseOpacity ?? 0.02;
+    mats.wire.color.set(armor.theme.primary);
+    mats.wire.opacity = armor.hologram?.wireOpacity ?? 0.1;
+    (mats.fresnel.uniforms.uColor.value as THREE.Color).set(armor.theme.glow);
+    (projectorMat.uniforms.uColor.value as THREE.Color).set(armor.theme.primary);
+    (cloudMat.uniforms.uColor.value as THREE.Color).set(armor.theme.glow);
+    scaleSmoothRef.current = armor.defaultScale ?? 1;
+  }, [armor, mats, projectorMat, cloudMat]);
+
+  useEffect(() => {
+    if (transition.tick === lastArmorTickRef.current) return;
+    lastArmorTickRef.current = transition.tick;
+    assembleStartRef.current = performance.now();
+    setAssemble(0);
+  }, [transition.tick]);
+
+  const particlePositions = useMemo(() => new Float32Array(120 * 3), []);
 
   useFrame((state, delta) => {
+    const raw = assembleStartRef.current === null ? 1 : Math.min(1, (performance.now() - assembleStartRef.current) / 1200);
+    const progress = 1 - Math.pow(1 - raw, 3);
+    if (armor.kind === 'procedural' && progress !== assemble) setAssemble(progress);
+    if (modelAssemblyRef.current) {
+      modelAssemblyRef.current.scale.set(0.85 + progress * 0.15, 0.2 + progress * 0.8, 0.85 + progress * 0.15);
+    }
+    if (scannerRef.current) {
+      scannerRef.current.visible = armor.kind === 'glb' && raw < 1;
+      scannerRef.current.position.y = footOffset + (raw * 2 - 0.05) * (0.05 - footOffset);
+    }
+    if (particlesRef.current) {
+      particlesRef.current.visible = armor.kind === 'glb' && raw < 1;
+      if (particlesRef.current.visible) {
+        for (let i = 0; i < 120; i++) {
+          const angle = i * 2.399963 + raw * 5;
+          const radius = (0.3 + (i % 11) * 0.065) * (1 - progress * 0.85);
+          particlePositions[i * 3] = Math.cos(angle) * radius;
+          particlePositions[i * 3 + 1] = footOffset + raw * (0.1 - footOffset) * 2 + Math.sin(i * 1.7) * 0.13;
+          particlePositions[i * 3 + 2] = Math.sin(angle) * radius;
+        }
+        (particlesRef.current.geometry.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+      }
+    }
+    if (processed && raw < 1) {
+      const pulse = Math.sin(raw * Math.PI) * 0.55;
+      processed.clonedMaterials.forEach(material => {
+        if (material instanceof THREE.MeshStandardMaterial) {
+          material.emissiveIntensity = (material.userData.armorBaseEmissive ??= material.emissiveIntensity) + pulse;
+        }
+      });
+    } else if (processed) {
+      processed.clonedMaterials.forEach(material => {
+        if (material instanceof THREE.MeshStandardMaterial && material.userData.armorBaseEmissive !== undefined) {
+          material.emissiveIntensity = material.userData.armorBaseEmissive;
+        }
+      });
+    }
     if (!initialCamCapturedRef.current) {
       initialCamPosRef.current.copy(camera.position);
       initialCamCapturedRef.current = true;
@@ -815,9 +915,33 @@ export default function HolographicSuit({ handTrackingRef, command }: { handTrac
     <group ref={groupRef} position={[0, 0, 0]}>
       <ambientLight intensity={0.4} />
       <directionalLight position={[2, 2, 4]} intensity={0.6} />
-      <primitive object={processed} />
+      {armor.kind === 'glb' && processed && (
+        <group ref={modelAssemblyRef}>
+          <primitive object={processed.root} />
+        </group>
+      )}
+      {armor.kind === 'procedural' && armor.mech && (
+        <>
+          <hemisphereLight color="#e9faff" groundColor="#24343c" intensity={0.8} />
+          <directionalLight position={[1.5, 2, 4]} intensity={1.2} />
+          <directionalLight color={armor.theme.glow} position={[-3, 2, -2]} intensity={0.9} />
+          <Suspense fallback={null}>
+            <ProceduralMech params={armor.mech} assemble={assemble} />
+          </Suspense>
+        </>
+      )}
+      <mesh ref={scannerRef as any} visible={false} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.5, 0.72, 48]} />
+        <meshBasicMaterial color={armor.theme.glow} transparent opacity={0.65} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
+      <points ref={particlesRef as any} visible={false}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[particlePositions, 3]} />
+        </bufferGeometry>
+        <pointsMaterial color={armor.theme.glow} size={0.025} transparent opacity={0.8} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </points>
       
-      <mesh position={[0, footOffsetRef.current - 0.02, 0]} rotation={[-Math.PI/2, 0, 0]}>
+      <mesh position={[0, footOffset - 0.02, 0]} rotation={[-Math.PI/2, 0, 0]}>
         <circleGeometry args={[0.9, 64]} />
         <primitive object={projectorMat} attach="material" />
       </mesh>
@@ -842,7 +966,7 @@ export default function HolographicSuit({ handTrackingRef, command }: { handTrac
         <cylinderGeometry args={[0.06, 0.06, 2.2, 32]} />
         <primitive object={thrusterMat} attach="material" />
       </mesh>
-      <pointLight ref={thrusterLightRef as any} position={[0, footOffsetRef.current, -0.3]} intensity={0} color={new THREE.Color('#88d7ff')} distance={6} decay={2} />
+      <pointLight ref={thrusterLightRef as any} position={[0, footOffset, -0.3]} intensity={0} color={new THREE.Color('#88d7ff')} distance={6} decay={2} />
       <mesh ref={beamLeftRef as any} visible={false} position={[0,0,0]}>
         <cylinderGeometry args={[0.05, 0.05, 4.2, 32]} />
         <primitive object={beamMatL} attach="material" />

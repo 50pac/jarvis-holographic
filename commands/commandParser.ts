@@ -1,3 +1,5 @@
+import { findArmorByName } from '../armors/armorRegistry';
+
 export type ParsedCommand =
   | { type: 'exit' }
   | { type: 'showMark' }
@@ -10,7 +12,10 @@ export type ParsedCommand =
   | { type: 'eyeOn' }
   | { type: 'eyeOff' }
   | { type: 'zoom'; direction: 'in' | 'out' }
-  | { type: 'locate'; city: string };
+  | { type: 'locate'; city: string }
+  | { type: 'armorPicker'; open: true }
+  | { type: 'armorSwitch'; target: 'next' | 'prev' }
+  | { type: 'armorSwitch'; target: 'id'; id: string };
 
 /** Wake phrases use the same case-insensitive, trimmed matching as the voice handler. */
 export function isWakeWord(transcript: string): boolean {
@@ -38,8 +43,11 @@ export function getCityCandidate(raw: string): string | null {
 }
 
 /**
- * Priority is close commands, exit, location, show mark, suit actions, map,
- * scan, eye, then zoom. Specific close commands come first so "scan off" does
+ * Priority is close commands, exit, location, show mark, armor switch,
+ * armor picker, suit actions (stop/reset/land/fly), map, scan, eye, then zoom.
+ * A suit action in a mixed phrase such as "stop armor" suppresses the generic
+ * picker; a named switch such as "fly mark 3" still wins. Close commands come
+ * first so "scan off" does
  * not turn scanning on. Location precedes map because a city request can
  * contain "map" or "地图". Word boundaries keep English keywords from matching
  * inside unrelated words such as "discover" or "island".
@@ -59,6 +67,20 @@ export function parseCommand(raw: string): ParsedCommand | null {
   if (city) return { type: 'locate', city };
 
   if (/\bshow\s+mark\b/.test(text)) return { type: 'showMark' };
+
+  if (/\bnext\s+armor\b/.test(text) || text.includes('下一套') || text.includes('下一件战甲')) {
+    return { type: 'armorSwitch', target: 'next' };
+  }
+  if (/\b(?:previous|prev|last)\s+armor\b/.test(text) || text.includes('上一套') || text.includes('上一件战甲')) {
+    return { type: 'armorSwitch', target: 'prev' };
+  }
+  const armor = findArmorByName(text);
+  if (armor) return { type: 'armorSwitch', target: 'id', id: armor.id };
+
+  const suitAction = /\b(?:stop|reset|land(?:ing)?|fly)\b/.test(text);
+  if (!suitAction && (/\barmors?\b|\bsuit\s+up\b/.test(text) || /换装|换甲|战甲库|战甲/.test(text))) {
+    return { type: 'armorPicker', open: true };
+  }
 
   if (/\bstop\b/.test(text)) return { type: 'suit', action: 'stop' };
   if (/\breset\b/.test(text)) return { type: 'suit', action: 'reset' };
