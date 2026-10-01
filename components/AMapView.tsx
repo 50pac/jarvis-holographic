@@ -4,6 +4,7 @@ import { HandTrackingState } from '../types';
 declare global {
   interface Window {
     AMap: any;
+    _AMapSecurityConfig?: { serviceHost: string };
   }
 }
 
@@ -45,6 +46,7 @@ const AMapView = forwardRef<{ zoomIn: () => void; zoomOut: () => void; locateCit
   const tileReadyCountRef = useRef<number>(0);
   const tileReadyRef = useRef<boolean>(false);
   const [mapVisible, setMapVisible] = useState<boolean>(false);
+  const [mapStatus, setMapStatus] = useState<'init' | 'no_key' | 'error'>('init');
   const lastIdxLeftRef = useRef<number | null>(null);
   const lastIdxRightRef = useRef<number | null>(null);
   const rotVelRef = useRef<number>(0);
@@ -112,27 +114,33 @@ const AMapView = forwardRef<{ zoomIn: () => void; zoomOut: () => void; locateCit
   }), []);
 
   useEffect(() => {
-    const key = (process.env.AMAP_KEY as string) || '';
-    const security = (process.env.AMAP_SECURITY_CODE as string) || (process.env.AMAP_SECRET as string) || '';
-    const ensureScript = () => {
+    let cancelled = false;
+    const ensureScript = async () => {
+      const response = await fetch('/api/config');
+      if (!response.ok) throw new Error('AMap configuration request failed');
+      const config: { amapKey?: string } = await response.json();
+      if (cancelled) return;
+      const key = config.amapKey || '';
+      if (!key) {
+        statusRef.current = 'no_key';
+        setMapStatus('no_key');
+        return;
+      }
       if (window.AMap) return Promise.resolve();
-      if (!key) { statusRef.current = 'no_key'; return Promise.resolve(); }
       statusRef.current = 'loading';
+      window._AMapSecurityConfig = { serviceHost: window.location.origin + '/_AMapService' };
       return new Promise<void>((resolve, reject) => {
-        if (security) {
-          (window as any)._AMapSecurityConfig = { securityJsCode: security };
-        }
         const script = document.createElement('script');
         script.src = `https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(key)}`;
         script.async = true;
         script.onload = () => resolve();
-        script.onerror = () => { statusRef.current = 'error'; reject(new Error('AMap script load failed')); };
+        script.onerror = () => reject(new Error('AMap script load failed'));
         document.head.appendChild(script);
       });
     };
 
     ensureScript().then(() => {
-      if (!containerRef.current || !window.AMap) return;
+      if (cancelled || !containerRef.current || !window.AMap) return;
       mapRef.current = new window.AMap.Map(containerRef.current, {
         viewMode: '3D',
         zoom: 4,
@@ -171,9 +179,14 @@ const AMapView = forwardRef<{ zoomIn: () => void; zoomOut: () => void; locateCit
       if (flightActiveRef.current && flightPendingAnimRef.current) {
         startZoomAnim();
       }
-    }).catch(() => {});
+    }).catch(() => {
+      if (cancelled) return;
+      statusRef.current = 'error';
+      setMapStatus('error');
+    });
 
     return () => {
+      cancelled = true;
       if (mapRef.current) {
         mapRef.current.destroy();
         mapRef.current = null;
@@ -413,14 +426,14 @@ const AMapView = forwardRef<{ zoomIn: () => void; zoomOut: () => void; locateCit
   }, [handTrackingRef]);
 
   return (
-    <div className={`absolute inset-0 z-9 ${mapVisible ? '' : 'opacity-0 pointer-events-none'}`}>
+    <div className={`absolute inset-0 z-9 ${mapVisible || mapStatus !== 'init' ? '' : 'opacity-0 pointer-events-none'}`}>
       <div ref={containerRef} className="w-full h-full" />
-      {statusRef.current === 'no_key' && (
+      {mapStatus === 'no_key' && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 bg-black/70 text-holo-cyan border border-holo-cyan/40 rounded text-[12px]">
           缺少 AMAP_KEY，地图未加载
         </div>
       )}
-      {statusRef.current === 'error' && (
+      {mapStatus === 'error' && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 bg-black/70 text-red-400 border border-red-400/40 rounded text-[12px]">
           地图脚本加载失败
         </div>
