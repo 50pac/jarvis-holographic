@@ -34,5 +34,6 @@ it('keeps the new shell clear of the old palette and identity', async () => {
     const source = await readFile(rootFile(file), 'utf8');
     for (const pattern of forbidden) expect(source, file).not.toMatch(pattern);
   }
-  expect(await readFile(rootFile('App.tsx'), 'utf8')).toContain('机匠');
+  const { zh } = await import('./i18n/zh');
+  expect(zh['s0.title']).toBe('机匠');
 });

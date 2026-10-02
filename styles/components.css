@@ -1,0 +1,35 @@
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #000;
+  border-radius: 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  transition-property: transform, background-color;
+  transition-duration: 90ms;
+  transition-timing-function: var(--ease-mech);
+}
+.ui-button-primary { background: var(--signal); color: var(--ink-0); }
+.ui-shadow-hard { box-shadow: var(--shadow-hard); }
+.ui-button-primary:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: var(--shadow-hard-pressed); }
+.ui-button-secondary { background: transparent; border-color: var(--line-hi); color: var(--bone); }
+.ui-button-text { background: transparent; border: 0; border-bottom: 1px solid currentColor; color: var(--bone); padding-left: 0; padding-right: 0; }
+.ui-button:disabled { color: var(--bone-3); background: var(--ink-1); border-color: var(--line); box-shadow: none; cursor: not-allowed; }
+@media (hover: hover) {
+  .ui-button-primary:hover:not(:disabled) { background: #FF7040; }
+  .ui-button-secondary:hover:not(:disabled) { background: var(--ink-2); }
+  .ui-button-text:hover:not(:disabled) { color: var(--signal); }
+}
+.ui-panel { background: var(--ink-1); border: 1px solid var(--line); border-radius: 0; position: relative; }
+.ui-rivet { position: absolute; width: 6px; height: 6px; background: radial-gradient(circle at 35% 35%, var(--line-hi) 0 1px, var(--line) 2px 3px); pointer-events: none; }
+.ui-ticket-cut { clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%); }
+.ui-ticket-holes { background-image: radial-gradient(circle, var(--ink-0) 0 3px, var(--line-hi) 3px 4px, transparent 4px); background-size: 20px 24px; }
+.ui-hazard { background: repeating-linear-gradient(45deg, #FF5A1F 0 8px, #0E0D0B 8px 16px); }
+.ui-toast-enter { animation: ui-push-in 200ms var(--ease-mech) both; }
+.ui-dialog-enter { animation: ui-push-in 200ms var(--ease-mech) both; }
+@keyframes ui-push-in { 0% { transform: translateY(8px); opacity: 0; } 88% { transform: translateY(-1px); opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
+.ui-led-online { animation: led-breathe 1.2s var(--ease-mech) infinite alternate; }
+@keyframes led-breathe { from { opacity: 1; } to { opacity: .45; } }

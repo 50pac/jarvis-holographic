@@ -1,44 +1,38 @@
+@import './styles/tokens.css';
+@import './styles/fonts.css';
+@import './styles/components.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --ink-0: #0E0D0B;
-  --ink-1: #17140F;
-  --ink-2: #221E17;
-  --line: #3A342A;
-  --line-hi: #6E6757;
-  --bone: #EDE6D3;
-  --bone-2: #B9B09B;
-  --bone-3: #8B826F;
-  --signal: #FF5A1F;
-  --amber: #F2A33A;
-  --verdigris: #4FB39C;
-  --warn: #FFC247;
-  --danger: #FF4B3A;
-  --oxide: #C8412F;
-}
-
 html, body, #root { height: 100%; }
-
+#root { position: relative; z-index: 1; }
 body {
   background-color: var(--ink-0);
   color: var(--bone);
   margin: 0;
   overflow: hidden;
-  font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+  font-family: 'IBM Plex Sans Condensed', 'Microsoft YaHei UI', 'PingFang SC', 'Noto Sans SC', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
 }
-
-:focus-visible { outline: 2px solid #FF5A1F; outline-offset: 2px; }
-
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url('./assets/img/grain.png');
+  opacity: .06;
+  z-index: 0;
+}
+:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--line); }
 ::-webkit-scrollbar-thumb { background: var(--line-hi); }
-
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation: none !important;
-    transition-duration: .01ms !important;
-    scroll-behavior: auto !important;
-  }
+  *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+[data-motion="reduce"] *, [data-motion="reduce"] *::before, [data-motion="reduce"] *::after {
+  animation: none !important;
+  transition-duration: .01ms !important;
+  scroll-behavior: auto !important;
 }
