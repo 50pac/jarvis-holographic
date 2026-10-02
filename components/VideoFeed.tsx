@@ -150,7 +150,7 @@ const VideoFeed: React.FC<VideoFeedProps> = ({ onTrackingUpdate }) => {
   return (
     <video
       ref={videoRef}
-      className="absolute top-0 left-0 w-full h-full object-cover opacity-40 contrast-125 brightness-75 filter grayscale-[0.3] pointer-events-none transform -scale-x-100"
+      className="absolute bottom-4 right-4 h-[120px] w-[160px] object-cover pointer-events-none -scale-x-100"
       playsInline
       muted
       autoPlay

@@ -1,5 +1,5 @@
 services:
-  jarvis:
+  wright:
     build: .
     env_file: .env
     environment:
@@ -9,8 +9,6 @@ services:
       ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-}
       RATE_LIMIT_LLM_PER_MIN: ${RATE_LIMIT_LLM_PER_MIN:-}
       RATE_LIMIT_LLM_BURST: ${RATE_LIMIT_LLM_BURST:-}
-      RATE_LIMIT_AMAP_PER_MIN: ${RATE_LIMIT_AMAP_PER_MIN:-}
-      RATE_LIMIT_AMAP_BURST: ${RATE_LIMIT_AMAP_BURST:-}
       HSTS: ${HSTS:-}
       CSP_REPORT_ONLY: ${CSP_REPORT_ONLY:-}
       CSP_SCRIPT_UNSAFE_EVAL: ${CSP_SCRIPT_UNSAFE_EVAL:-}

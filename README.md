@@ -1,3 +1,5 @@
+> **重做进行中（R1：清场 + 新壳）**：本仓库正在重做为《机匠 WRIGHT》（浏览器里的机甲维修工坊）。当前分支只保留空舞台与新主题壳，旧的全息 HUD / 地球 / 战甲 / 高德地图等功能已移除；下方内容是旧版说明，将在 R9 整体重写。重做方案见 `docs/` 之外的设计笔记。
+
 # J.A.R.V.I.S. Holographic Interface
 
 本仓库是 [xxjun9527/jarvis-holographic](https://github.com/xxjun9527/jarvis-holographic) 的 fork 焕新版。这个 fork 完成了安全加固与依赖升级（秘密 Key 只在服务端代理）、`App.tsx` 拆分重构与命令解析单测、去 CDN 的资源本地化与 GLB 压缩，以及 README 与 CI。fork 维护：**50pac**；原作者：**xxjun9527**。

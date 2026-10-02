@@ -1,6 +1,6 @@
 {
-  "name": "J.A.R.V.I.S. Holographic Interface",
-  "description": "A futuristic Augmented Reality interface featuring a holographic earth and gesture-controlled data panels.",
+  "name": "机匠 WRIGHT",
+  "description": "在七号机库的夜班里，诊断、修复并验收老旧机甲。",
   "requestFramePermissions": [
     "camera",
     "microphone"

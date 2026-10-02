@@ -1,8 +1,6 @@
 import express from 'express';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
 import { fileURLToPath } from 'node:url';
 import { createOriginGuard, createRateLimiter, createSecurityHeaders, parseNonNegativeInt, parseTrustProxy, setNoCache, setStaticCacheHeaders } from './security.js';
 
@@ -22,10 +20,7 @@ const host = process.env.HOST || '0.0.0.0';
 const llmBaseUrl = (process.env.LLM_BASE_URL || 'https://api.deepseek.com').replace(/\/+$/, '');
 const llmApiKey = process.env.LLM_API_KEY || '';
 const llmModel = process.env.LLM_MODEL || 'deepseek-chat';
-const amapKey = process.env.AMAP_KEY || '';
-const amapSecurityCode = process.env.AMAP_SECURITY_CODE || '';
 const llmConfigured = Boolean(llmApiKey.trim());
-const amapConfigured = Boolean(amapKey.trim() && amapSecurityCode.trim());
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', parseTrustProxy(process.env.TRUST_PROXY));
@@ -36,22 +31,12 @@ const llmLimiter = createRateLimiter({
   capacity: parseNonNegativeInt(process.env.RATE_LIMIT_LLM_BURST, 10),
   refillPerMinute: parseNonNegativeInt(process.env.RATE_LIMIT_LLM_PER_MIN, 20),
 });
-const amapLimiter = createRateLimiter({
-  capacity: parseNonNegativeInt(process.env.RATE_LIMIT_AMAP_BURST, 120),
-  refillPerMinute: parseNonNegativeInt(process.env.RATE_LIMIT_AMAP_PER_MIN, 600),
-});
-
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
 });
 
 app.get('/api/config', (_req, res) => {
-  res.json({
-    amapKey,
-    amapProxyHost: '/_AMapService',
-    llmConfigured,
-    amapConfigured,
-  });
+  res.json({ llmConfigured });
 });
 
 app.post('/api/llm', originGuard, llmLimiter, express.json({ limit: '32kb' }), async (req, res) => {
@@ -115,45 +100,6 @@ app.post('/api/llm', originGuard, llmLimiter, express.json({ limit: '32kb' }), a
   }
 });
 
-app.use('/_AMapService', originGuard, amapLimiter, async (req, res) => {
-  if (!['GET', 'POST'].includes(req.method)) {
-    return res.status(405).json({ error: 'method_not_allowed' });
-  }
-  if (!amapSecurityCode.trim()) {
-    return res.status(503).json({ error: 'amap_not_configured' });
-  }
-
-  const incoming = new URL(req.originalUrl, 'http://localhost');
-  const target = new URL('https://restapi.amap.com/');
-  target.pathname = incoming.pathname.slice('/_AMapService'.length) || '/';
-  for (const [key, value] of incoming.searchParams) {
-    if (key.toLowerCase() !== 'jscode') target.searchParams.append(key, value);
-  }
-  target.searchParams.set('jscode', amapSecurityCode);
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
-  try {
-    const upstream = await fetch(target, {
-      method: req.method,
-      headers: req.headers['content-type'] ? { 'Content-Type': req.headers['content-type'] } : {},
-      body: req.method === 'POST' ? req : undefined,
-      duplex: req.method === 'POST' ? 'half' : undefined,
-      signal: controller.signal,
-    });
-    res.status(upstream.status);
-    const contentType = upstream.headers.get('content-type');
-    if (contentType) res.setHeader('Content-Type', contentType);
-    if (upstream.body) await pipeline(Readable.fromWeb(upstream.body), res);
-    else res.end();
-  } catch {
-    if (res.headersSent) res.destroy();
-    else res.status(502).json({ error: 'amap_upstream_error' });
-  } finally {
-    clearTimeout(timeout);
-  }
-});
-
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'not_found' });
 });
@@ -174,5 +120,5 @@ app.use((error, _req, res, _next) => {
 });
 
 app.listen(port, host, () => {
-  console.log(`Proxy listening on ${host}:${port} (LLM configured: ${llmConfigured}, AMap configured: ${amapConfigured})`);
+  console.log(`Proxy listening on ${host}:${port} (LLM configured: ${llmConfigured})`);
 });

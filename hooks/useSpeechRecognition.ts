@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { isWakeWord } from '../commands/commandParser';
 import type { SpeechRecognition, SpeechRecognitionEvent } from '../types/speechRecognition';
 
 interface SpeechRecognitionOptions {
@@ -37,21 +36,17 @@ export function useSpeechRecognition({
     const recognitionInstance: SpeechRecognition = new SpeechRecognitionConstructor();
     recognitionInstance.continuous = true;
     recognitionInstance.interimResults = false;
-    recognitionInstance.lang = 'en-US';
+    recognitionInstance.lang = 'zh-CN';
 
     recognitionInstance.onresult = async (event: SpeechRecognitionEvent) => {
       if (!shouldListenRef.current || recognitionRef.current !== recognitionInstance) return;
       const lastResultIndex = event.results.length - 1;
       const alt = event.results[lastResultIndex][0];
       const transcriptRaw = alt.transcript;
-      const confidence = typeof alt.confidence === 'number' ? alt.confidence : 1;
       const now = Date.now();
       if (speakingRef.current || now - ttsEndAtRef.current < 1200) return;
       const norm = (s: string) => s.trim().toLowerCase().replace(/[\.,;!，。！？、]/g, '');
       if (lastSpokenRef.current && norm(transcriptRaw) === norm(lastSpokenRef.current)) return;
-      const isWakeCandidate = isWakeWord(transcriptRaw);
-      const short = transcriptRaw.trim().length < 3;
-      if (!isWakeCandidate && short && confidence < 0.6) return;
       await handlerRef.current(transcriptRaw);
     };
 

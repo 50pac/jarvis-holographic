@@ -1,3 +1,4 @@
+// R2 will use self-hosted @fontsource Big Shoulders Stencil Display, IBM Plex Sans Condensed, and IBM Plex Mono.
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -9,42 +10,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        'klein-blue': '#002FA7',
-        'holo-cyan': 'rgb(var(--hud-primary-rgb) / <alpha-value>)',
-        'holo-blue': '#00A3FF',
-        'alert-red': '#FF2A2A',
+        ink: { 0: '#0E0D0B', 1: '#17140F', 2: '#221E17' },
+        line: { DEFAULT: '#3A342A', hi: '#6E6757' },
+        bone: { DEFAULT: '#EDE6D3', 2: '#B9B09B', 3: '#8B826F' },
+        signal: '#FF5A1F',
+        amber: '#F2A33A',
+        verdigris: '#4FB39C',
+        warn: '#FFC247',
+        danger: '#FF4B3A',
+        oxide: '#C8412F',
       },
       fontFamily: {
-        sans: ['Rajdhani', 'sans-serif'],
-        display: ['Orbitron', 'sans-serif'],
+        sans: ['Microsoft YaHei UI', 'PingFang SC', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+        display: ['Microsoft YaHei UI', 'PingFang SC', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+        mono: ['ui-monospace', 'Cascadia Mono', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
       },
-      animation: {
-        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        scanline: 'scanline 8s linear infinite',
-        'spin-slow': 'spin 20s linear infinite',
-        'spin-reverse-slow': 'spin-reverse 25s linear infinite',
-        blink: 'blink 1s step-end infinite',
-        flash: 'flash 0.5s ease-out forwards',
-      },
-      keyframes: {
-        scanline: {
-          '0%': { transform: 'translateY(-100%)' },
-          '100%': { transform: 'translateY(100%)' },
-        },
-        blink: {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0' },
-        },
-        'spin-reverse': {
-          from: { transform: 'rotate(360deg)' },
-          to: { transform: 'rotate(0deg)' },
-        },
-        flash: {
-          '0%': { opacity: '0', transform: 'scale(0.9)' },
-          '50%': { opacity: '1', transform: 'scale(1.02)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
-        },
-      },
+      transitionTimingFunction: { mech: 'cubic-bezier(.2,.8,.2,1)' },
+      transitionDuration: { 120: '120ms', 200: '200ms', 360: '360ms' },
     },
   },
 };

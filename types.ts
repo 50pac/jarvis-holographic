@@ -18,16 +18,3 @@ export interface HandTrackingState {
   leftHand: HandInteractionData | null;
   rightHand: HandInteractionData | null;
 }
-
-export enum RegionName {
-  AMERICAS = "美洲战区",
-  PACIFIC = "大洋洲监测区",
-  ASIA = "亚洲战区",
-  EUROPE = "欧洲防区",
-  AFRICA = "非洲资源区"
-}
-
-export interface PanelPosition {
-  x: number;
-  y: number;
-}

@@ -64,14 +64,14 @@ export function createOriginGuard(allowedOrigin) {
 }
 
 export function buildCsp(env = process.env) {
-  const scripts = ["'self'", "'wasm-unsafe-eval'", 'blob:', 'https://webapi.amap.com'];
+  const scripts = ["'self'", "'wasm-unsafe-eval'", 'blob:'];
   if (env.CSP_SCRIPT_UNSAFE_EVAL === '1') scripts.push("'unsafe-eval'");
   return [
     "default-src 'self'",
     `script-src ${scripts.join(' ')}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://webapi.amap.com https://*.amap.com https://*.is.autonavi.com https://*.autonavi.com",
-    "connect-src 'self' blob: data: https://*.amap.com https://*.autonavi.com",
+    "img-src 'self' data: blob:",
+    "connect-src 'self' blob: data:",
     "font-src 'self' data:",
     "media-src 'self' blob: data: mediastream:",
     "worker-src 'self' blob:",

@@ -10,6 +10,8 @@ import {
   setStaticCacheHeaders,
 } from './security.js';
 
+const removedMapHosts = new RegExp(['a', 'map', '|', 'auto', 'navi'].join(''), 'i');
+
 function runMiddleware(middleware, { ip = '192.0.2.1', origin, secure = false } = {}) {
   const headers = {};
   const response = {
@@ -80,11 +82,12 @@ describe('proxy and security configuration', () => {
 
   it('builds a compatible CSP with opt-in switches', () => {
     const csp = buildCsp({});
-    expect(csp).toContain("script-src 'self' 'wasm-unsafe-eval' blob: https://webapi.amap.com");
+    expect(csp).toContain("script-src 'self' 'wasm-unsafe-eval' blob:");
     expect(csp).toContain("worker-src 'self' blob:");
     expect(csp).toContain("font-src 'self' data:");
     expect(csp).not.toContain("'unsafe-eval'");
-    expect(buildCsp({ CSP_SCRIPT_UNSAFE_EVAL: '1' })).toContain("https://webapi.amap.com 'unsafe-eval'");
+    expect(csp).not.toMatch(removedMapHosts);
+    expect(buildCsp({ CSP_SCRIPT_UNSAFE_EVAL: '1' })).toContain("script-src 'self' 'wasm-unsafe-eval' blob: 'unsafe-eval'");
   });
 
   it('checks only configured origins and applies security headers', () => {
@@ -97,7 +100,7 @@ describe('proxy and security configuration', () => {
     expect(blocked.response.body).toEqual({ error: 'origin_not_allowed' });
 
     const headers = runMiddleware(createSecurityHeaders({ HSTS: '1' }), { secure: true }).headers;
-    expect(headers['content-security-policy']).toContain('https://webapi.amap.com');
+    expect(headers['content-security-policy']).toContain("script-src 'self' 'wasm-unsafe-eval' blob:");
     expect(headers['x-content-type-options']).toBe('nosniff');
     expect(headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
     expect(headers['x-frame-options']).toBe('DENY');
@@ -160,6 +163,6 @@ describe('middleware route ordering', () => {
     expect(parseBody).toHaveBeenCalledOnce();
     const health = runRoute([security, (_req, res) => res.json({ ok: true })]);
     expect(health.res.body).toEqual({ ok: true });
-    expect(health.headers['content-security-policy']).toContain('webapi.amap.com');
+    expect(health.headers['content-security-policy']).not.toMatch(removedMapHosts);
   });
 });
